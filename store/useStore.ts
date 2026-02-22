@@ -3,15 +3,21 @@ import { persist } from 'zustand/middleware';
 
 interface Exam {
   id: string;
-  type: 'High' | 'Low'; // High = JEE/Major, Low = School/Weekly
+  type: 'High' | 'Mid' | 'Low';
   date: string;
   title: string;
+}
+
+interface Mark {
+  score: number;
+  total: number;
+  date: string;
 }
 
 interface Subject {
   id: string;
   name: string;
-  marks: { score: number; total: number; date: string }[]; 
+  marks: Mark[];
   exams: Exam[];
   notes: { title: string; url: string }[];
   videos: { title: string; url: string }[];
