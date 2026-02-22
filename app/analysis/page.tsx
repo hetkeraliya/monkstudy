@@ -2,14 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Trash2, Calendar, Clock, ChevronRight } from "lucide-react";
+import { TrendingUp, Trash2, Calendar, Clock } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { vibrate } from "../../lib/db";
+
+// Defined the Tooltip type to match exactly what our points provide
+interface TooltipData {
+  x: number;
+  y: number;
+  label: string;
+  val: number;
+  color: string;
+}
 
 export default function Analysis() {
   const [mounted, setMounted] = useState(false);
   const { subjects, updateSubject } = useStore();
-  const [tooltip, setTooltip] = useState<{ x: number, y: number, label: string, val: number, color: string } | null>(null);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
@@ -17,15 +26,14 @@ export default function Analysis() {
   const graphWidth = 300;
   const graphHeight = 150;
 
-  // Logic to process marks into coordinates
   const getDataPoints = (marks: any[], subName: string) => {
     if (!marks || marks.length === 0) return { path: "", points: [] };
     const points = marks.map((m, i) => {
       const x = marks.length === 1 ? graphWidth / 2 : (i / (marks.length - 1)) * graphWidth;
       const total = m.total || 100;
-      const percentage = Math.round((m.score / total) * 100);
-      const y = graphHeight - (percentage / 100) * graphHeight;
-      return { x, y, percentage, label: `${subName} Test ${i + 1}` };
+      const val = Math.round((m.score / total) * 100); // Renamed to 'val' to match tooltip
+      const y = graphHeight - (val / 100) * graphHeight;
+      return { x, y, val, label: `${subName} Test ${i + 1}` };
     });
     return { path: points.map(p => `${p.x},${p.y}`).join(" "), points };
   };
@@ -39,7 +47,6 @@ export default function Analysis() {
     data: getDataPoints(subjects.find(s => s.id === conf.id)?.marks || [], conf.name)
   }));
 
-  // Global Countdown Logic
   const allExams = subjects.flatMap(sub => 
     (sub.exams || []).map(ex => ({ ...ex, subjectId: sub.id, subjectName: sub.name }))
   ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -50,32 +57,20 @@ export default function Analysis() {
     return days > 0 ? `${days}d` : days === 0 ? "Today" : "Passed";
   };
 
-  const deleteExam = (subjectId: string, examId: string) => {
-    vibrate(60);
-    const subject = subjects.find(s => s.id === subjectId);
-    if (subject) {
-      updateSubject(subjectId, { exams: subject.exams.filter(ex => ex.id !== examId) });
-    }
-  };
-
   return (
     <div className="space-y-6 pb-24">
       <header className="pt-2">
         <h1 className="text-2xl font-bold text-monk-dark tracking-tight">Intelligence</h1>
       </header>
 
-      {/* 1. Clickable Performance Graph */}
       <section className="matte-card p-6 shadow-matte relative overflow-hidden">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <TrendingUp size={18} className="text-monk-olive" />
-            <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Growth Trend</h3>
-          </div>
+        <div className="flex items-center gap-2 mb-6">
+          <TrendingUp size={18} className="text-monk-olive" />
+          <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Growth Trend</h3>
         </div>
 
         <div className="relative h-44 w-full bg-monk-bg/40 rounded-2xl p-6 border border-monk-sand/20">
           <svg viewBox={`0 0 ${graphWidth} ${graphHeight}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
-            {/* Subject Lines */}
             {datasets.map(ds => (
               <g key={ds.id}>
                 <polyline fill="none" stroke={ds.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={ds.data.path} />
@@ -91,7 +86,6 @@ export default function Analysis() {
             ))}
           </svg>
 
-          {/* Data Bubble */}
           <AnimatePresence>
             {tooltip && (
               <motion.div 
@@ -109,52 +103,30 @@ export default function Analysis() {
         </div>
       </section>
 
-      {/* 2. Consolidated Global Countdown */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Global Timeline</h3>
-          <Clock size={14} className="text-monk-muted" />
-        </div>
-        
+        <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest px-1">Global Timeline</h3>
         <div className="space-y-3">
-          <AnimatePresence>
-            {allExams.filter(e => getCountdown(e.date) !== "Passed").map((ex) => (
-              <motion.div 
-                key={ex.id} 
-                layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
-                className="matte-card p-4 flex justify-between items-center border-l-4" 
-                style={{ borderLeftColor: ex.type === 'High' ? '#ef4444' : ex.type === 'Mid' ? '#fb923c' : '#60a5fa' }}
-              >
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-monk-dark">{ex.title}</span>
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 bg-monk-bg rounded text-monk-muted uppercase">{ex.subjectName}</span>
-                  </div>
-                  <span className="text-[10px] text-monk-muted font-medium">{new Date(ex.date).toLocaleDateString()}</span>
+          {allExams.filter(e => getCountdown(e.date) !== "Passed").map((ex) => (
+            <div key={ex.id} className="matte-card p-4 flex justify-between items-center border-l-4" 
+                 style={{ borderLeftColor: ex.type === 'High' ? '#ef4444' : ex.type === 'Mid' ? '#fb923c' : '#60a5fa' }}>
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-monk-dark">{ex.title}</span>
+                  <span className="text-[8px] font-bold px-1.5 py-0.5 bg-monk-bg rounded text-monk-muted uppercase">{ex.subjectName}</span>
                 </div>
-                
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <span className="text-xl font-black text-monk-dark tracking-tighter leading-none">{getCountdown(ex.date)}</span>
-                    <span className="text-[8px] font-bold text-monk-muted uppercase tracking-tighter block">To Exam</span>
-                  </div>
-                  <button onClick={() => deleteExam(ex.subjectId, ex.id)} className="p-2 bg-monk-bg rounded-lg text-monk-muted active:text-red-500">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {allExams.length === 0 && (
-            <div className="p-8 text-center bg-monk-bg/30 rounded-[28px] border border-dashed border-monk-sand">
-              <Calendar className="mx-auto text-monk-sand mb-2" size={24} />
-              <p className="text-[10px] text-monk-muted font-bold uppercase">No upcoming deadlines</p>
+                <span className="text-[10px] text-monk-muted font-medium">{ex.date}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-xl font-black text-monk-dark tracking-tighter">{getCountdown(ex.date)}</span>
+                <button onClick={() => updateSubject(ex.subjectId, { exams: (subjects.find(s => s.id === ex.subjectId)?.exams || []).filter(e => e.id !== ex.id) })} className="p-2 bg-monk-bg rounded-lg text-monk-muted">
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
-          )}
+          ))}
         </div>
       </section>
     </div>
   );
-}
-  
+      }
+                  
