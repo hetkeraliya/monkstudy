@@ -8,17 +8,16 @@ export class MonkDatabase extends Dexie {
     super('StudyMonkDB');
     this.version(1).stores({
       tasks: 'id, status, subject, priority, dueDate',
-      planner: 'id' // stores daily blocks
+      planner: 'id' 
     });
   }
 }
 
 export const db = new MonkDatabase();
 
-// Haptic feedback utility
-export const vibrate = (ms: number = 50) => {
+// Updated to allow both single vibrations and complex patterns
+export const vibrate = (pattern: number | number[] = 50) => {
   if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
-    window.navigator.vibrate(ms);
+    window.navigator.vibrate(pattern);
   }
 };
-
