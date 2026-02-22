@@ -1,60 +1,46 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, School, Coffee, BookOpen, Moon, Edit3 } from "lucide-react";
-import { vibrate } from "../lib/db";
+import { Clock, Book, Coffee, Sunset } from "lucide-react";
 
-const PLANNER_BLOCKS = [
-  { id: "morning", time: "05:00 - 07:00", label: "Morning Ritual", icon: Coffee, activity: "Formula Revision & Prep" },
-  { id: "school", time: "07:00 - 17:00", label: "School Hours", icon: School, activity: "Regular Classes & Lab" },
-  { id: "evening", time: "17:30 - 20:30", label: "JEE Intensive", icon: BookOpen, activity: "Physics & Chemistry Problem Solving" },
-  { id: "night", time: "21:00 - 23:00", label: "Review & Mock", icon: Moon, activity: "Maths PYQs & Error Analysis" },
-];
+export default function Planner() {
+  const schedule = [
+    { time: "07:00 AM", task: "School Start", icon: <Clock size={16} />, type: "School" },
+    { time: "01:00 PM", task: "Lunch Break", icon: <Coffee size={16} />, type: "Break" },
+    { time: "05:00 PM", task: "School End", icon: <Sunset size={16} />, type: "School" },
+    { time: "06:30 PM", task: "JEE Deep Work 1", icon: <Book size={16} />, type: "Study" },
+    { time: "09:00 PM", task: "JEE Deep Work 2", icon: <Book size={16} />, type: "Study" },
+  ];
 
-export default function DailyPlanner() {
   return (
-    <motion.div 
-      initial={{ opacity: 0, x: -10 }} 
-      animate={{ opacity: 1, x: 0 }} 
-      className="space-y-6 pb-24"
-    >
-      <header className="flex justify-between items-center pt-2">
-        <div>
-          <h1 className="text-2xl font-bold text-monk-textMain tracking-tight">Daily Plan</h1>
-          <p className="text-sm text-monk-muted font-medium">Consistent daily rhythm.</p>
-        </div>
-        <button onClick={() => vibrate(30)} className="text-monk-muted p-2">
-          <Edit3 size={20} />
-        </button>
+    <div className="space-y-6 pb-24">
+      <header className="pt-2">
+        <h1 className="text-2xl font-bold text-monk-dark tracking-tight">Monk Schedule</h1>
+        <p className="text-[10px] text-monk-muted font-bold uppercase tracking-widest">Rigid Routine</p>
       </header>
 
-      {/* Timeline Layout */}
-      <div className="relative space-y-4 before:absolute before:left-[19px] before:top-4 before:bottom-4 before:w-[2px] before:bg-monk-sand/40">
-        {PLANNER_BLOCKS.map((block) => (
-          <div key={block.id} className="relative pl-12">
-            {/* Timeline Dot/Icon */}
-            <div className="absolute left-0 top-1 w-10 h-10 rounded-full bg-monk-card border-2 border-monk-bg flex items-center justify-center z-10 shadow-sm">
-              <block.icon size={18} className="text-monk-olive" />
+      <div className="space-y-4">
+        {schedule.map((item, i) => (
+          <motion.div 
+            key={i}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className={`matte-card p-5 flex items-center gap-5 ${
+              item.type === 'Study' ? 'bg-monk-olive/5 border-l-4 border-monk-olive' : 'border-l-4 border-monk-sand'
+            }`}
+          >
+            <div className="text-monk-muted">{item.icon}</div>
+            <div className="flex-1">
+              <p className="text-[10px] font-black uppercase text-monk-muted leading-none mb-1">{item.time}</p>
+              <h3 className="text-sm font-bold text-monk-dark">{item.task}</h3>
             </div>
-
-            <div className="matte-card p-4 transition-transform active:scale-[0.99]">
-              <div className="flex justify-between items-start">
-                <span className="text-[10px] font-bold text-monk-muted uppercase tracking-widest flex items-center gap-1">
-                  <Clock size={10} /> {block.time}
-                </span>
-                <span className="bg-monk-bg px-2 py-0.5 rounded text-[10px] font-bold text-monk-dark uppercase">
-                  {block.id}
-                </span>
-              </div>
-              <h3 className="font-bold text-monk-textMain mt-1">{block.label}</h3>
-              <p className="text-sm text-monk-muted mt-2 leading-relaxed">
-                {block.activity}
-              </p>
-            </div>
-          </div>
+            {item.type === 'Study' && (
+              <span className="bg-monk-olive text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">Priority</span>
+            )}
+          </motion.div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
-
