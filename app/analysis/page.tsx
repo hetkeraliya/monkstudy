@@ -1,34 +1,37 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { BarChart3, Calendar, TrendingUp, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { BarChart3, Calendar, TrendingUp, Info, Trash2 } from "lucide-react";
 import { useStore } from "../../store/useStore";
+import { vibrate } from "../../lib/db";
 
 export default function Analysis() {
   const [mounted, setMounted] = useState(false);
-  const { subjects } = useStore();
+  const { subjects, updateSubject } = useStore();
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
-  // Configuration for our Custom SVG Graph
+  // Constants for SVG Graph
   const graphWidth = 300;
   const graphHeight = 150;
 
-  // Function to convert marks into SVG coordinates
+  // Fixed Point Calculation: Maps percentage to Y coordinate
   const getPoints = (marks: any[]) => {
     if (!marks || marks.length < 2) return "";
     return marks.map((m, i) => {
       const x = (i / (marks.length - 1)) * graphWidth;
-      const percentage = (m.score / m.total) * 100;
+      // Safety check: ensure total is never 0 to avoid division error
+      const total = m.total || 100;
+      const percentage = (m.score / total) * 100;
       const y = graphHeight - (percentage / 100) * graphHeight;
       return `${x},${y}`;
     }).join(" ");
   };
 
   const allExams = subjects.flatMap(sub => 
-    (sub.exams || []).map(ex => ({ ...ex, subjectName: sub.name }))
+    (sub.exams || []).map(ex => ({ ...ex, subjectId: sub.id, subjectName: sub.name }))
   ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const getCountdown = (date: string) => {
@@ -37,91 +40,80 @@ export default function Analysis() {
     return days > 0 ? `${days}d` : days === 0 ? "Today" : "Passed";
   };
 
+  const deleteExam = (subjectId: string, examId: string) => {
+    vibrate(60);
+    const subject = subjects.find(s => s.id === subjectId);
+    if (subject) {
+      const filteredExams = subject.exams.filter(ex => ex.id !== examId);
+      updateSubject(subjectId, { exams: filteredExams });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24">
       <header className="pt-2">
-        <h1 className="text-2xl font-bold text-monk-dark tracking-tight">Performance Intel</h1>
-        <p className="text-sm text-monk-muted font-medium">Native SVG progress tracking.</p>
+        <h1 className="text-2xl font-bold text-monk-dark tracking-tight">Intelligence</h1>
       </header>
 
-      {/* 1. The Custom SVG Line Graph */}
-      <section className="matte-card p-6 shadow-matte overflow-hidden">
+      {/* 1. The SVG Progress Graph */}
+      <section className="matte-card p-6 shadow-matte">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <TrendingUp size={18} className="text-monk-olive" />
-            <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Accuracy Trend (%)</h3>
+            <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Growth Trend</h3>
           </div>
           <div className="flex gap-2">
-            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-monk-dark" /><span className="text-[8px] font-bold text-monk-muted">P</span></div>
-            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-monk-olive" /><span className="text-[8px] font-bold text-monk-muted">C</span></div>
-            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-orange-400" /><span className="text-[8px] font-bold text-monk-muted">M</span></div>
+             <div className="w-2 h-2 rounded-full bg-monk-dark" />
+             <div className="w-2 h-2 rounded-full bg-monk-olive" />
+             <div className="w-2 h-2 rounded-full bg-orange-400" />
           </div>
         </div>
 
-        <div className="relative h-40 w-full bg-monk-bg/30 rounded-2xl p-4">
-          <svg 
-            viewBox={`0 0 ${graphWidth} ${graphHeight}`} 
-            className="w-full h-full overflow-visible"
-            preserveAspectRatio="none"
-          >
-            {/* Horizontal Grid Lines */}
-            {[0, 25, 50, 75, 100].map((tick) => (
-              <line 
-                key={tick}
-                x1="0" y1={(tick / 100) * graphHeight} 
-                x2={graphWidth} y2={(tick / 100) * graphHeight} 
-                stroke="#E2E2E2" strokeWidth="1"
-              />
-            ))}
-
-            {/* Subject Lines */}
-            <polyline
-              fill="none" stroke="#384D48" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-              points={getPoints(subjects.find(s => s.id === 'phy')?.marks || [])}
-            />
-            <polyline
-              fill="none" stroke="#ACAD94" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-              points={getPoints(subjects.find(s => s.id === 'chem')?.marks || [])}
-            />
-            <polyline
-              fill="none" stroke="#fb923c" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
-              points={getPoints(subjects.find(s => s.id === 'math')?.marks || [])}
-            />
+        <div className="relative h-40 w-full bg-monk-bg/40 rounded-2xl p-4 border border-monk-sand/20">
+          <svg viewBox={`0 0 ${graphWidth} ${graphHeight}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
+            {/* Subject Trend Polylines */}
+            <polyline fill="none" stroke="#384D48" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={getPoints(subjects.find(s => s.id === 'phy')?.marks || [])} />
+            <polyline fill="none" stroke="#ACAD94" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={getPoints(subjects.find(s => s.id === 'chem')?.marks || [])} />
+            <polyline fill="none" stroke="#fb923c" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={getPoints(subjects.find(s => s.id === 'math')?.marks || [])} />
           </svg>
         </div>
-        
-        {subjects.every(s => s.marks.length < 2) && (
-          <div className="mt-4 flex items-start gap-2 p-3 bg-blue-50 rounded-xl">
-            <Info size={14} className="text-blue-500 mt-0.5" />
-            <p className="text-[10px] text-blue-700 leading-tight">
-              Add at least <b>2 mock test entries</b> in the Home tab to see your trend lines.
-            </p>
-          </div>
-        )}
       </section>
 
-      {/* 2. Global Exam Timeline */}
+      {/* 2. Global Timeline with Delete System */}
       <section className="space-y-3">
-        <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest px-1">Upcoming JEE Deadlines</h3>
+        <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-[0.2em] px-1">Upcoming Exams</h3>
         <div className="space-y-3">
-          {allExams.filter(e => getCountdown(e.date) !== "Passed").map((ex) => (
-            <div 
-              key={ex.id} 
-              className="matte-card p-4 flex justify-between items-center border-l-4" 
-              style={{ borderLeftColor: ex.type === 'High' ? '#ef4444' : ex.type === 'Mid' ? '#fb923c' : '#60a5fa' }}
-            >
-              <div>
-                <span className="text-xs font-bold block text-monk-dark">{ex.title}</span>
-                <span className="text-[9px] font-bold text-monk-muted uppercase">{ex.subjectName} • {ex.type} PRIORITY</span>
-              </div>
-              <div className="text-right">
-                <span className="text-xl font-black text-monk-dark tracking-tighter block">{getCountdown(ex.date)}</span>
-                <span className="text-[9px] font-bold text-monk-muted uppercase">Remaining</span>
-              </div>
-            </div>
-          ))}
+          <AnimatePresence>
+            {allExams.filter(e => getCountdown(e.date) !== "Passed").map((ex) => (
+              <motion.div 
+                key={ex.id} 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: 50 }}
+                className="matte-card p-4 flex justify-between items-center border-l-4" 
+                style={{ borderLeftColor: ex.type === 'High' ? '#ef4444' : ex.type === 'Mid' ? '#fb923c' : '#60a5fa' }}
+              >
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-monk-dark">{ex.title}</span>
+                  <span className="text-[9px] font-bold text-monk-muted uppercase">{ex.subjectName}</span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <span className="text-xl font-black text-monk-dark tracking-tighter block">{getCountdown(ex.date)}</span>
+                  </div>
+                  <button 
+                    onClick={() => deleteExam(ex.subjectId, ex.id)}
+                    className="p-2 bg-monk-bg rounded-lg text-monk-muted active:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </section>
     </div>
   );
-                }
+}
