@@ -1,10 +1,11 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // We specify the root folders directly since you don't use /src
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
@@ -26,10 +27,6 @@ const config: Config = {
       boxShadow: {
         'matte': '0 4px 20px rgba(0, 0, 0, 0.05)',
       },
-      fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        body: ['system-ui', 'sans-serif'],
-      }
     },
   },
   plugins: [],
