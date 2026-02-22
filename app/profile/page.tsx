@@ -1,3 +1,6 @@
+import { useStore } from "../../store/useStore";
+import { vibrate } from "../../lib/db";
+
 "use client";
 
 import { motion } from "framer-motion";
