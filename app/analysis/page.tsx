@@ -2,15 +2,22 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Trash2, Calendar, Clock } from "lucide-react";
+import { TrendingUp, Trash2, Clock, Calendar } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { vibrate } from "../../lib/db";
 
-// Explicitly define the types for the graph logic
+// Explicit Interfaces to fix "Implicit Any" errors
 interface Mark {
   score: number;
   total: number;
   date: string;
+}
+
+interface Exam {
+  id: string;
+  type: 'High' | 'Mid' | 'Low';
+  date: string;
+  title: string;
 }
 
 interface TooltipData {
@@ -26,9 +33,7 @@ export default function Analysis() {
   const { subjects, updateSubject } = useStore();
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   const graphWidth = 300;
   const graphHeight = 150;
@@ -42,7 +47,7 @@ export default function Analysis() {
 
     return config.map(subConfig => {
       const subject = subjects.find(s => s.id === subConfig.id);
-      const marks = (subject?.marks || []) as Mark[]; // Explicit type cast
+      const marks = (subject?.marks || []) as Mark[];
       
       if (marks.length === 0) return { ...subConfig, path: "", points: [] };
 
@@ -60,14 +65,18 @@ export default function Analysis() {
 
   const allExams = useMemo(() => {
     return subjects.flatMap(sub => 
-      (sub.exams || []).map(ex => ({ ...ex, subjectId: sub.id, subjectName: sub.name }))
+      ((sub.exams || []) as Exam[]).map(ex => ({ ...ex, subjectId: sub.id, subjectName: sub.name }))
     ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [subjects]);
 
   if (!mounted) return null;
 
   const getCountdown = (date: string) => {
-    const diff = new Date(date).getTime() - new Date().getTime();
+    const d = new Date(date);
+    d.setHours(0,0,0,0);
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    const diff = d.getTime() - now.getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
     return days > 0 ? `${days}d` : days === 0 ? "Today" : "Passed";
   };
@@ -78,6 +87,7 @@ export default function Analysis() {
         <h1 className="text-2xl font-bold text-monk-dark tracking-tight">Intelligence</h1>
       </header>
 
+      {/* Accuracy Graph */}
       <section className="matte-card p-6 shadow-matte relative overflow-hidden">
         <div className="relative h-44 w-full bg-monk-bg/40 rounded-2xl p-6 border border-monk-sand/20">
           <svg viewBox={`0 0 ${graphWidth} ${graphHeight}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
@@ -86,8 +96,8 @@ export default function Analysis() {
                 {ds.points.length > 1 && (
                   <polyline fill="none" stroke={ds.color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" points={ds.path} />
                 )}
-                {ds.data?.points?.map((p: any, i: number) => (
-                   <circle 
+                {ds.points.map((p, i) => (
+                  <circle 
                     key={i} cx={p.x} cy={p.y} r="6" 
                     fill={ds.color} stroke="white" strokeWidth="2"
                     onClick={() => { vibrate(20); setTooltip({ ...p, color: ds.color }); }}
@@ -106,7 +116,7 @@ export default function Analysis() {
               >
                 <div className="bg-white px-3 py-2 rounded-xl shadow-2xl border border-monk-bg text-center">
                   <p className="text-[7px] font-black uppercase text-monk-muted mb-0.5">{tooltip.label}</p>
-                  <p className="text-sm font-black" style={{ color: tooltip.color }}>{tooltip.val}%</p>
+                  <p className="text-sm font-black" style={{ color: tooltip.color }}>{tooltip.val}% Accuracy</p>
                 </div>
               </motion.div>
             )}
@@ -114,14 +124,15 @@ export default function Analysis() {
         </div>
       </section>
 
+      {/* Global Timeline */}
       <section className="space-y-3">
-        <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest px-1">Global Timeline</h3>
+        <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest px-1">Exam Countdown</h3>
         {allExams.filter(e => getCountdown(e.date) !== "Passed").map((ex) => (
           <div key={ex.id} className="matte-card p-4 flex justify-between items-center border-l-4" 
                style={{ borderLeftColor: ex.type === 'High' ? '#ef4444' : ex.type === 'Mid' ? '#fb923c' : '#60a5fa' }}>
             <div className="flex flex-col">
               <span className="text-xs font-bold text-monk-dark">{ex.title}</span>
-              <span className="text-[8px] font-bold px-1.5 py-0.5 bg-monk-bg rounded text-monk-muted uppercase">{ex.subjectName}</span>
+              <span className="text-[9px] font-bold px-1.5 py-0.5 bg-monk-bg rounded text-monk-muted uppercase">{ex.subjectName}</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-xl font-black text-monk-dark tracking-tighter">{getCountdown(ex.date)}</span>
@@ -134,5 +145,4 @@ export default function Analysis() {
       </section>
     </div>
   );
-                }
-                                                              
+}
