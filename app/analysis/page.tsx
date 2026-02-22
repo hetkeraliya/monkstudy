@@ -6,7 +6,7 @@ import { TrendingUp, Trash2, Clock, Calendar } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { vibrate } from "../../lib/db";
 
-// Explicit Interfaces to fix "Implicit Any" errors
+// 1. Define Strict Interfaces
 interface Mark {
   score: number;
   total: number;
@@ -38,6 +38,7 @@ export default function Analysis() {
   const graphWidth = 300;
   const graphHeight = 150;
 
+  // 2. Type-Safe Graph Data
   const datasets = useMemo(() => {
     const config = [
       { id: 'phy', name: 'Physics', color: '#384D48' },
@@ -63,9 +64,14 @@ export default function Analysis() {
     });
   }, [subjects]);
 
+  // 3. Type-Safe Consolidated Exams
   const allExams = useMemo(() => {
     return subjects.flatMap(sub => 
-      ((sub.exams || []) as Exam[]).map(ex => ({ ...ex, subjectId: sub.id, subjectName: sub.name }))
+      ((sub.exams || []) as Exam[]).map((ex: Exam) => ({ 
+        ...ex, 
+        subjectId: sub.id, 
+        subjectName: sub.name 
+      }))
     ).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [subjects]);
 
@@ -81,13 +87,24 @@ export default function Analysis() {
     return days > 0 ? `${days}d` : days === 0 ? "Today" : "Passed";
   };
 
+  // 4. Fixed Delete Function with Explicit Types
+  const handleRemoveExam = (subjectId: string, examId: string) => {
+    vibrate(60);
+    const subject = subjects.find(s => s.id === subjectId);
+    if (subject) {
+      const existingExams = (subject.exams || []) as Exam[];
+      const updatedExams = existingExams.filter((e: Exam) => e.id !== examId);
+      updateSubject(subjectId, { exams: updatedExams });
+    }
+  };
+
   return (
     <div className="space-y-6 pb-24">
       <header className="pt-2">
         <h1 className="text-2xl font-bold text-monk-dark tracking-tight">Intelligence</h1>
       </header>
 
-      {/* Accuracy Graph */}
+      {/* Accuracy Trend Graph */}
       <section className="matte-card p-6 shadow-matte relative overflow-hidden">
         <div className="relative h-44 w-full bg-monk-bg/40 rounded-2xl p-6 border border-monk-sand/20">
           <svg viewBox={`0 0 ${graphWidth} ${graphHeight}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
@@ -124,9 +141,9 @@ export default function Analysis() {
         </div>
       </section>
 
-      {/* Global Timeline */}
+      {/* Global Countdown */}
       <section className="space-y-3">
-        <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest px-1">Exam Countdown</h3>
+        <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest px-1">Global Countdown</h3>
         {allExams.filter(e => getCountdown(e.date) !== "Passed").map((ex) => (
           <div key={ex.id} className="matte-card p-4 flex justify-between items-center border-l-4" 
                style={{ borderLeftColor: ex.type === 'High' ? '#ef4444' : ex.type === 'Mid' ? '#fb923c' : '#60a5fa' }}>
@@ -136,7 +153,10 @@ export default function Analysis() {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-xl font-black text-monk-dark tracking-tighter">{getCountdown(ex.date)}</span>
-              <button onClick={() => updateSubject(ex.subjectId, { exams: (subjects.find(s => s.id === ex.subjectId)?.exams || []).filter(e => e.id !== ex.id) })} className="p-2 bg-monk-bg rounded-lg text-monk-muted">
+              <button 
+                onClick={() => handleRemoveExam(ex.subjectId, ex.id)} 
+                className="p-2 bg-monk-bg rounded-lg text-monk-muted active:text-red-500"
+              >
                 <Trash2 size={16} />
               </button>
             </div>
@@ -145,4 +165,5 @@ export default function Analysis() {
       </section>
     </div>
   );
-}
+        }
+            
