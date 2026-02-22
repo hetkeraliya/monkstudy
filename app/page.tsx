@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, FileText, Video, Trophy, Calendar, Plus, Save, 
-  ChevronRight, ExternalLink, Target, RotateCcw, Play, Pause, Link2 
+  ChevronRight, ExternalLink, Target, RotateCcw, Play, Pause
 } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { vibrate } from "../lib/db";
 
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
-  const { xp, subjects, addXp, updateSubject } = useStore();
+  const { subjects, addXp, updateSubject } = useStore();
   
   // Pomodoro State
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -58,8 +58,8 @@ export default function Dashboard() {
     if (!resTitle || !resUrl || !activeSub) return;
     vibrate(30);
     const newRes = { title: resTitle, url: resUrl };
-    const updateKey = resType === 'notes' ? 'notes' : 'videos';
-    updateSubject(activeSub.id, { [updateKey]: [...(activeSub[updateKey] || []), newRes] });
+    const key = resType === 'notes' ? 'notes' : 'videos';
+    updateSubject(activeSub.id, { [key]: [...(activeSub[key] || []), newRes] });
     setResTitle(""); setResUrl("");
   };
 
@@ -73,7 +73,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 pb-24 p-4">
-      {/* Pomodoro Timer Section */}
+      {/* Pomodoro Timer */}
       <div className="matte-card p-8 flex flex-col items-center shadow-matte">
         <div className="flex items-center gap-2 text-monk-olive mb-2">
           <Target size={16} />
@@ -96,22 +96,20 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Subject Selection Grid */}
+      {/* Subject List */}
       <section className="space-y-4">
         <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-[0.2em] px-1">Subjects</h3>
         {subjects.map((sub) => (
           <motion.div 
             key={sub.id} 
             onClick={() => { vibrate(20); setActiveSub(sub); setView('menu'); }}
-            className="matte-card p-6 flex justify-between items-center cursor-pointer active:scale-95 transition-all"
+            className="matte-card p-6 flex justify-between items-center cursor-pointer active:scale-95"
           >
             <div>
               <h2 className="text-xl font-bold text-monk-dark">{sub.name}</h2>
-              <div className="flex gap-2 mt-1">
-                <span className="text-[10px] text-monk-muted font-bold uppercase">
-                  {(sub.notes?.length || 0) + (sub.videos?.length || 0)} Resources
-                </span>
-              </div>
+              <p className="text-[10px] text-monk-muted font-bold uppercase mt-1">
+                {(sub.notes?.length || 0) + (sub.videos?.length || 0)} Resources
+              </p>
             </div>
             <div className="flex flex-col items-end gap-2">
               {(sub.exams || []).filter(e => getCountdown(e.date) !== "Passed").slice(0, 1).map(ex => (
@@ -125,7 +123,7 @@ export default function Dashboard() {
         ))}
       </section>
 
-      {/* Centered Command Modal */}
+      {/* Center Box Modal */}
       <AnimatePresence>
         {activeSub && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
@@ -133,19 +131,17 @@ export default function Dashboard() {
             
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-6 overflow-hidden">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-monk-dark">{activeSub.name} {view !== 'menu' && `- ${view.toUpperCase()}`}</h3>
-                <button onClick={() => view === 'menu' ? setActiveSub(null) : setView('menu')} className="p-2 bg-monk-bg rounded-full text-monk-muted">
-                  <X size={18} />
-                </button>
+                <h3 className="text-lg font-bold text-monk-dark">{activeSub.name} - {view.toUpperCase()}</h3>
+                <button onClick={() => view === 'menu' ? setActiveSub(null) : setView('menu')} className="p-2 bg-monk-bg rounded-full text-monk-muted"><X size={18} /></button>
               </div>
 
               {view === 'menu' && (
-                <div className="grid grid-cols-2 gap-4 pb-2">
-                  <button onClick={() => setView('resources')} className="flex flex-col items-center gap-3 p-6 bg-monk-bg rounded-2xl active:scale-95 transition-transform">
+                <div className="grid grid-cols-2 gap-4">
+                  <button onClick={() => setView('resources')} className="flex flex-col items-center gap-3 p-6 bg-monk-bg rounded-2xl">
                     <div className="p-3 bg-white rounded-xl shadow-sm"><FileText className="text-monk-olive" /></div>
                     <span className="text-[10px] font-bold text-monk-muted uppercase">Resources</span>
                   </button>
-                  <button onClick={() => setView('exam')} className="flex flex-col items-center gap-3 p-6 bg-monk-bg rounded-2xl active:scale-95 transition-transform">
+                  <button onClick={() => setView('exam')} className="flex flex-col items-center gap-3 p-6 bg-monk-bg rounded-2xl">
                     <div className="p-3 bg-white rounded-xl shadow-sm"><Trophy className="text-orange-500" /></div>
                     <span className="text-[10px] font-bold text-monk-muted uppercase">Exam Intel</span>
                   </button>
@@ -153,26 +149,24 @@ export default function Dashboard() {
               )}
 
               {view === 'resources' && (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <p className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Link New Resource</p>
-                    <input type="text" placeholder="Title (e.g. Unit Notes)" value={resTitle} onChange={e => setResTitle(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl text-sm outline-none" />
-                    <input type="text" placeholder="Google Drive / YouTube Link" value={resUrl} onChange={e => setResUrl(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl text-sm outline-none" />
+                    <input type="text" placeholder="Title" value={resTitle} onChange={e => setResTitle(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl text-sm outline-none" />
+                    <input type="text" placeholder="Link (Drive/YouTube)" value={resUrl} onChange={e => setResUrl(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl text-sm outline-none" />
                     <div className="flex gap-2">
-                      <select value={resType} onChange={e => setResType(e.target.value as any)} className="flex-1 p-3 bg-monk-bg rounded-xl text-xs font-bold outline-none">
+                      <select value={resType} onChange={e => setResType(e.target.value as any)} className="flex-1 p-3 bg-monk-bg rounded-xl text-[10px] font-bold">
                         <option value="notes">NOTES (DRIVE)</option>
                         <option value="videos">VIDEO (YOUTUBE)</option>
                       </select>
                       <button onClick={handleSaveResource} className="p-3 bg-monk-dark text-white rounded-xl"><Plus size={20} /></button>
                     </div>
                   </div>
-                  
-                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                    {([...(activeSub.notes || []), ...(activeSub.videos || [])]).map((res: any, i: number) => (
+                  <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {[...(activeSub.notes || []), ...(activeSub.videos || [])].map((res: any, i: number) => (
                       <a key={i} href={res.url} target="_blank" className="flex items-center justify-between p-3 bg-monk-bg rounded-xl">
                         <div className="flex items-center gap-2">
                           {res.url.includes('youtube') ? <Video size={14} className="text-red-500" /> : <FileText size={14} className="text-monk-olive" />}
-                          <span className="text-xs font-bold text-monk-dark truncate max-w-[150px]">{res.title}</span>
+                          <span className="text-xs font-bold text-monk-dark truncate max-w-[120px]">{res.title}</span>
                         </div>
                         <ExternalLink size={14} className="text-monk-sand" />
                       </a>
@@ -186,95 +180,17 @@ export default function Dashboard() {
                   <div className="p-4 bg-monk-bg rounded-2xl space-y-3">
                     <p className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Entry Database</p>
                     <div className="flex gap-2">
-                      <input type="number" placeholder="Score" value={score} onChange={e => setScore(e.target.value)} className="w-full p-3 rounded-xl bg-white outline-none text-sm font-bold" />
-                      <input type="number" placeholder="Total" value={total} onChange={e => setTotal(e.target.value)} className="w-full p-3 rounded-xl bg-white outline-none text-sm font-bold" />
+                      <input type="number" placeholder="Score" value={score} onChange={e => setScore(e.target.value)} className="w-full p-3 rounded-xl bg-white text-sm font-bold outline-none" />
+                      <input type="number" placeholder="Total" value={total} onChange={e => setTotal(e.target.value)} className="w-full p-3 rounded-xl bg-white text-sm font-bold outline-none" />
                       <button onClick={() => { vibrate(40); updateSubject(activeSub.id, { marks: [...(activeSub.marks || []), { score, total, date: new Date() }] }); setScore(""); setTotal(""); }} className="p-3 bg-monk-dark text-white rounded-xl"><Save size={20} /></button>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl text-sm outline-none" />
+                    <input type="text" placeholder="Exam Title" value={examTitle} onChange={e => setExamTitle(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl text-sm outline-none" />
                     <div className="flex gap-2">
-                      <select value={examLevel} onChange={e => setExamLevel(e.target.value as any)} className="flex-1 p-3 bg-monk-bg rounded-xl text-xs font-bold">
-                        <option value="High">HIGH GRADE</option>
-                        <option value="Low">LOW GRADE</option>
-                      </select>
+                      <input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="flex-1 p-3 bg-monk-bg rounded-xl text-sm outline-none" />
                       <button onClick={handleSaveExam} className="p-3 bg-monk-dark text-white rounded-xl"><Plus size={20} /></button>
                     </div>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-                  </button>
-                </div>
-              )}
-
-              {view === 'exam' && (
-                <div className="space-y-6">
-                  <div className="p-4 bg-monk-bg rounded-2xl space-y-3">
-                    <p className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Add Mock Score</p>
-                    <div className="flex gap-2">
-                      <input type="number" placeholder="Score" value={score} onChange={e => setScore(e.target.value)} className="w-full p-3 rounded-xl bg-white outline-none text-sm font-bold" />
-                      <input type="number" placeholder="Total" value={total} onChange={e => setTotal(e.target.value)} className="w-full p-3 rounded-xl bg-white outline-none text-sm font-bold" />
-                      <button onClick={saveMarks} className="p-3 bg-monk-dark text-white rounded-xl"><Save size={20} /></button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Upcoming Exams</p>
-                    <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                      {(activeSub.exams || []).map((ex: any) => (
-                        <div key={ex.id} className="flex items-center justify-between p-3 bg-white border border-monk-bg rounded-xl">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${ex.type === 'High' ? 'bg-orange-500' : 'bg-blue-500'}`} />
-                            <span className="text-xs font-bold text-monk-dark truncate max-w-[100px]">{ex.title || "Exam"}</span>
-                          </div>
-                          <span className="text-[10px] font-bold text-monk-olive uppercase">{getCountdown(ex.date)}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-2 pt-2 border-t border-monk-sand/30">
-                      <input type="text" placeholder="Exam Title" value={examTitle} onChange={e => setExamTitle(e.target.value)} className="w-full p-2 bg-monk-bg rounded-lg text-xs outline-none" />
-                      <div className="flex gap-2">
-                        <input type="date" value={examDate} onChange={e => setExamDate(e.target.value)} className="flex-1 p-2 bg-monk-bg rounded-lg text-xs outline-none" />
-                        <select value={examLevel} onChange={e => setExamLevel(e.target.value as any)} className="p-2 bg-monk-bg rounded-lg text-[10px] font-bold outline-none">
-                          <option value="High">HIGH</option>
-                          <option value="Low">LOW</option>
-                        </select>
-                        <button onClick={saveExam} className="p-2 bg-monk-dark text-white rounded-lg"><Plus size={16} /></button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {view === 'resources' && (
-                <div className="space-y-4">
-                   <p className="text-[10px] font-bold text-monk-muted uppercase tracking-widest px-1">Drive Notes & Videos</p>
-                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {(activeSub.notes || []).map((note: any, i: number) => (
-                      <a key={i} href={note.url} target="_blank" className="flex items-center justify-between p-4 bg-monk-bg rounded-2xl group">
-                        <div className="flex items-center gap-3">
-                          <FileText size={18} className="text-monk-olive" />
-                          <span className="text-xs font-bold text-monk-dark">{note.title}</span>
-                        </div>
-                        <ExternalLink size={14} className="text-monk-sand" />
-                      </a>
-                    ))}
-                    {(activeSub.videos || []).map((vid: any, i: number) => (
-                      <a key={i} href={vid.url} target="_blank" className="flex items-center justify-between p-4 bg-monk-bg rounded-2xl group">
-                        <div className="flex items-center gap-3">
-                          <Video size={18} className="text-red-500" />
-                          <span className="text-xs font-bold text-monk-dark">{vid.title}</span>
-                        </div>
-                        <ExternalLink size={14} className="text-monk-sand" />
-                      </a>
-                    ))}
                   </div>
                 </div>
               )}
