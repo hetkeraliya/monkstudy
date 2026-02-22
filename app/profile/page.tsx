@@ -1,6 +1,3 @@
-import { useStore } from "../../store/useStore";
-import { vibrate } from "../../lib/db";
-
 "use client";
 
 import { motion } from "framer-motion";
@@ -14,15 +11,16 @@ import {
   Settings,
   ShieldCheck
 } from "lucide-react";
-import { useStore } from "../store/useStore";
-import { vibrate } from "../lib/db";
+
+// Use the correct two-level path to reach the root store/lib from app/profile
+import { useStore } from "../../store/useStore";
+import { vibrate } from "../../lib/db";
 
 export default function Profile() {
   const { xp, streak } = useStore();
 
   const handleBackup = () => {
     vibrate(50);
-    // Logic to export IndexedDB/Zustand as JSON
     console.log("Exporting JSON backup...");
   };
 
@@ -114,5 +112,4 @@ export default function Profile() {
       </section>
     </motion.div>
   );
-            }
-
+}
