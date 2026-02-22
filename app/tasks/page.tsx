@@ -1,94 +1,109 @@
 "use client";
 
-import { useState } from "react";
-import { motion, Reorder } from "framer-motion";
-import { Plus, CheckCircle2, Circle, Clock, Tag, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Trash2, CheckCircle2, Circle, AlertCircle } from "lucide-react";
+import { useStore } from "../store/useStore";
 import { vibrate } from "../lib/db";
 
-// Mock data following your JEE subject requirements
-const INITIAL_TASKS = [
-  { id: "1", title: "Solve HCV Kinematics Ex 1-10", subject: "Physics", priority: "High", status: "todo" },
-  { id: "2", title: "Inorganic Chemistry: P-Block Notes", subject: "Chemistry", priority: "Medium", status: "doing" },
-  { id: "3", title: "Practice Integration PYQs", subject: "Maths", priority: "Low", status: "done" },
-];
+export default function Tasks() {
+  const [mounted, setMounted] = useState(false);
+  const [input, setInput] = useState("");
+  const [priority, setPriority] = useState<'High' | 'Mid' | 'Low'>('High');
+  
+  const { tasks, addTask, toggleTask, deleteTask, addXp } = useStore();
 
-export default function TaskBoard() {
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  useEffect(() => setMounted(true), []);
 
-  const toggleComplete = (id: string) => {
-    vibrate(20); // Haptic feedback on completion
-    setTasks(tasks.map(t => t.id === id ? { ...t, status: t.status === "done" ? "todo" : "done" } : t));
+  const handleAdd = () => {
+    if (input.trim()) {
+      vibrate(40);
+      addTask(input, priority);
+      setInput("");
+    }
   };
 
+  const handleToggle = (id: string, completed: boolean) => {
+    vibrate(20);
+    toggleTask(id);
+    if (!completed) addXp(10); // Reward 10 XP for finishing a task
+  };
+
+  if (!mounted) return null;
+
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      className="space-y-6 pb-24"
-    >
-      <header className="flex justify-between items-center pt-2">
-        <div>
-          <h1 className="text-2xl font-bold text-monk-textMain tracking-tight">Tasks</h1>
-          <p className="text-sm text-monk-muted font-medium">Structure your day.</p>
-        </div>
-        <button 
-          onClick={() => vibrate(40)}
-          className="matte-btn p-3 shadow-matte"
-        >
-          <Plus size={24} />
-        </button>
+    <div className="space-y-6 pb-24">
+      <header className="pt-2">
+        <h1 className="text-2xl font-bold text-monk-dark tracking-tight">Mission Control</h1>
+        <p className="text-xs text-monk-muted font-bold uppercase tracking-widest">JEE Daily Targets</p>
       </header>
 
-      {/* Task List - Grouped by Status */}
-      <div className="space-y-8">
-        {["todo", "doing", "done"].map((group) => (
-          <section key={group} className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-               <span className="text-[10px] font-bold text-monk-muted uppercase tracking-[0.2em]">
-                {group}
-              </span>
-              <div className="h-[1px] flex-1 bg-monk-sand/50" />
-            </div>
-
-            <div className="space-y-3">
-              {tasks.filter(t => t.status === group).map((task) => (
-                <motion.div
-                  layout
-                  key={task.id}
-                  className={`matte-card p-4 flex items-center gap-4 transition-opacity ${task.status === 'done' ? 'opacity-60' : 'opacity-100'}`}
-                >
-                  <button onClick={() => toggleComplete(task.id)} className="flex-shrink-0">
-                    {task.status === "done" ? (
-                      <CheckCircle2 className="text-monk-olive" size={24} />
-                    ) : (
-                      <Circle className="text-monk-sand" size={24} />
-                    )}
-                  </button>
-
-                  <div className="flex-1 min-w-0">
-                    <h4 className={`font-bold text-monk-textMain truncate ${task.status === 'done' ? 'line-through' : ''}`}>
-                      {task.title}
-                    </h4>
-                    <div className="flex items-center gap-3 mt-1.5">
-                      <div className="flex items-center gap-1 bg-monk-bg px-2 py-0.5 rounded-full">
-                        <Tag size={10} className="text-monk-muted" />
-                        <span className="text-[10px] font-bold text-monk-dark">{task.subject}</span>
-                      </div>
-                      {task.priority === "High" && (
-                        <div className="flex items-center gap-1 text-orange-600">
-                          <AlertCircle size={10} />
-                          <span className="text-[10px] font-bold uppercase">High</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-        ))}
+      {/* Input Section */}
+      <div className="matte-card p-4 space-y-3 shadow-matte">
+        <input 
+          type="text" 
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="New study target..."
+          className="w-full p-4 bg-monk-bg rounded-2xl text-sm font-bold outline-none placeholder:text-monk-sand"
+        />
+        <div className="flex gap-2">
+          <select 
+            value={priority} 
+            onChange={(e) => setPriority(e.target.value as any)}
+            className="flex-1 p-3 bg-monk-bg rounded-xl text-[10px] font-bold uppercase outline-none"
+          >
+            <option value="High">HIGH (JEE)</option>
+            <option value="Mid">MID (COACHING)</option>
+            <option value="Low">LOW (SCHOOL)</option>
+          </select>
+          <button 
+            onClick={handleAdd}
+            className="p-3 bg-monk-dark text-white rounded-xl active:scale-90 transition-transform"
+          >
+            <Plus size={24} />
+          </button>
+        </div>
       </div>
-    </motion.div>
-  );
-                        }
 
+      {/* Task List */}
+      <div className="space-y-3">
+        <AnimatePresence mode="popLayout">
+          {tasks.length > 0 ? tasks.map((task) => (
+            <motion.div 
+              key={task.id}
+              layout
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className={`matte-card p-4 flex items-center justify-between border-l-4 ${
+                task.completed ? 'opacity-50' : 'opacity-100'
+              }`}
+              style={{ borderLeftColor: task.priority === 'High' ? '#ef4444' : task.priority === 'Mid' ? '#fb923c' : '#60a5fa' }}
+            >
+              <div className="flex items-center gap-3 flex-1" onClick={() => handleToggle(task.id, task.completed)}>
+                <button className="text-monk-olive">
+                  {task.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                </button>
+                <span className={`text-sm font-bold ${task.completed ? 'line-through' : ''}`}>
+                  {task.text}
+                </span>
+              </div>
+              <button 
+                onClick={() => { vibrate(60); deleteTask(task.id); }}
+                className="p-2 text-monk-sand hover:text-red-500"
+              >
+                <Trash2 size={18} />
+              </button>
+            </motion.div>
+          )) : (
+            <div className="p-12 text-center bg-monk-bg/30 rounded-[32px] border border-dashed border-monk-sand">
+              <AlertCircle className="mx-auto text-monk-sand mb-2" size={24} />
+              <p className="text-[10px] text-monk-muted font-bold uppercase">No tasks for today</p>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
