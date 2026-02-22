@@ -2,14 +2,23 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { Home, CheckSquare, Calendar, User } from "lucide-react";
 import Link from "next/link";
+import type { Viewport } from 'next'
 
 const inter = Inter({ subsets: ["latin"], variable: '--font-inter' });
+
+// This is the new way to handle the theme color in Next.js 14
+export const viewport: Viewport = {
+  themeColor: "#E2E2E2",
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
 
 export const metadata = {
   title: "Study Monk",
   description: "Matte minimal focus environment",
   manifest: "/manifest.json",
-  themeColor: "#E2E2E2",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +29,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
         
-        {/* Solid Matte Bottom Navbar */}
         <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-monk-card border-t border-monk-sand flex justify-around items-center px-2 py-4 pb-6 z-50">
           <Link href="/" className="flex flex-col items-center gap-1 text-monk-muted hover:text-monk-dark transition-colors">
             <Home size={22} />
