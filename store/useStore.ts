@@ -8,15 +8,12 @@ interface Task {
   priority: 'High' | 'Mid' | 'Low';
 }
 
-// ... existing interfaces for Subject, Mark, Exam ...
-
 interface MonkState {
   xp: number;
   streak: number;
-  tasks: Task[]; // New: Tasks array
+  tasks: Task[];
   subjects: any[];
   addXp: (amount: number) => void;
-  // New: Task Actions
   addTask: (text: string, priority: 'High' | 'Mid' | 'Low') => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
