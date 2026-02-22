@@ -4,9 +4,6 @@ const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
-    "./store/**/*.{js,ts,jsx,tsx,mdx}",
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
@@ -28,6 +25,11 @@ const config: Config = {
       boxShadow: {
         'matte': '0 4px 20px rgba(0, 0, 0, 0.05)',
       },
+      // This defines the classes Tailwind was looking for
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        body: ['system-ui', 'sans-serif'], // Now font-body will work if you need it
+      }
     },
   },
   plugins: [],
