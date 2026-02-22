@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useStore } from "@/store/useStore";
-import { vibrate } from "@/lib/db";
+import { useStore } from "../store/useStore";
+import { vibrate } from "../lib/db";
 import { Play, Pause, Flame, Target } from "lucide-react";
 
 export default function Home() {
