@@ -17,7 +17,6 @@ export default function Dashboard() {
   const [activeSub, setActiveSub] = useState<any>(null);
   const [view, setView] = useState<'menu' | 'resources' | 'exam'>('menu');
 
-  // Input States
   const [score, setScore] = useState("");
   const [total, setTotal] = useState("");
   const [examTitle, setExamTitle] = useState("");
@@ -59,15 +58,17 @@ export default function Dashboard() {
 
   const handleSaveExam = () => {
     if (!examDate || !activeSub) return;
-    const newExam = { id: Date.now().toString(), type: examLevel, date: examDate, title: examTitle };
-    updateSubject(activeSub.id, { exams: [...(activeSub.exams || []), newExam] });
+    updateSubject(activeSub.id, { 
+      exams: [...(activeSub.exams || []), { id: Date.now().toString(), type: examLevel, date: examDate, title: examTitle }] 
+    });
     setExamTitle(""); setExamDate(""); vibrate(40);
   };
 
   const handleSaveMarks = () => {
     if (!score || !total || !activeSub) return;
-    const newMark = { score: Number(score), total: Number(total), date: new Date().toISOString() };
-    updateSubject(activeSub.id, { marks: [...(activeSub.marks || []), newMark] });
+    updateSubject(activeSub.id, { 
+      marks: [...(activeSub.marks || []), { score: Number(score), total: Number(total), date: new Date().toISOString() }] 
+    });
     setScore(""); setTotal(""); vibrate(40);
   };
 
@@ -86,9 +87,8 @@ export default function Dashboard() {
       </div>
 
       <section className="space-y-4">
-        <h3 className="text-[10px] font-bold text-monk-muted uppercase tracking-widest px-1">Academic Control</h3>
         {subjects.map((sub) => (
-          <div key={sub.id} onClick={() => { vibrate(20); setActiveSub(sub); setView('menu'); }} className="matte-card p-6 flex justify-between items-center cursor-pointer active:scale-95 transition-all">
+          <div key={sub.id} onClick={() => { vibrate(20); setActiveSub(sub); setView('menu'); }} className="matte-card p-6 flex justify-between items-center cursor-pointer active:scale-95">
             <h2 className="text-xl font-bold text-monk-dark">{sub.name}</h2>
             <ChevronRight className="text-monk-sand" />
           </div>
@@ -120,28 +120,31 @@ export default function Dashboard() {
 
               {view === 'resources' && (
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <input type="text" placeholder="Title" value={resTitle} onChange={e => setResTitle(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl outline-none" />
-                    <input type="text" placeholder="Drive/YouTube Link" value={resUrl} onChange={e => setResUrl(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl outline-none" />
-                    <div className="flex gap-2">
-                      <select value={resType} onChange={e => setResType(e.target.value as any)} className="flex-1 p-3 bg-monk-bg rounded-xl text-[10px] font-bold">
-                        <option value="notes">NOTES</option>
-                        <option value="videos">VIDEOS</option>
-                      </select>
-                      <button onClick={handleSaveResource} className="p-3 bg-monk-dark text-white rounded-xl"><Plus size={20} /></button>
-                    </div>
+                  <input type="text" placeholder="Title" value={resTitle} onChange={e => setResTitle(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl outline-none" />
+                  <input type="text" placeholder="Drive/YouTube Link" value={resUrl} onChange={e => setResUrl(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl outline-none" />
+                  <div className="flex gap-2">
+                    <select value={resType} onChange={e => setResType(e.target.value as any)} className="flex-1 p-3 bg-monk-bg rounded-xl text-[10px] font-bold">
+                      <option value="notes">NOTES</option>
+                      <option value="videos">VIDEOS</option>
+                    </select>
+                    <button onClick={handleSaveResource} className="p-3 bg-monk-dark text-white rounded-xl"><Plus size={20} /></button>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto space-y-2">
+                    {[...(activeSub.notes || []), ...(activeSub.videos || [])].map((res, i) => (
+                      <a key={i} href={res.url} target="_blank" className="flex items-center justify-between p-3 bg-monk-bg rounded-xl text-xs font-bold">
+                        {res.title} <ExternalLink size={12} />
+                      </a>
+                    ))}
                   </div>
                 </div>
               )}
 
               {view === 'exam' && (
                 <div className="space-y-6">
-                  <div className="p-4 bg-monk-bg rounded-2xl space-y-3">
-                    <div className="flex gap-2">
-                      <input type="number" placeholder="Score" value={score} onChange={e => setScore(e.target.value)} className="w-full p-3 rounded-xl bg-white outline-none" />
-                      <input type="number" placeholder="Total" value={total} onChange={e => setTotal(e.target.value)} className="w-full p-3 rounded-xl bg-white outline-none" />
-                      <button onClick={handleSaveMarks} className="p-3 bg-monk-dark text-white rounded-xl"><Save size={20} /></button>
-                    </div>
+                  <div className="flex gap-2">
+                    <input type="number" placeholder="Score" value={score} onChange={e => setScore(e.target.value)} className="w-full p-3 rounded-xl bg-monk-bg outline-none" />
+                    <input type="number" placeholder="Total" value={total} onChange={e => setTotal(e.target.value)} className="w-full p-3 rounded-xl bg-monk-bg outline-none" />
+                    <button onClick={handleSaveMarks} className="p-3 bg-monk-dark text-white rounded-xl"><Save size={20} /></button>
                   </div>
                   <div className="space-y-2">
                     <input type="text" placeholder="Exam Title" value={examTitle} onChange={e => setExamTitle(e.target.value)} className="w-full p-3 bg-monk-bg rounded-xl outline-none" />
@@ -163,5 +166,5 @@ export default function Dashboard() {
       </AnimatePresence>
     </div>
   );
-          }
-            
+}
+  
