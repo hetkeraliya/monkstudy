@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "react-observable";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Play, Pause, RotateCcw, Plus, ExternalLink, 
   Calendar, FileText, X, Target, Save 
@@ -39,7 +39,7 @@ export default function Dashboard() {
     if (!dateStr) return null;
     const diff = new Date(dateStr).getTime() - new Date().getTime();
     const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return days > 0 ? `${days} days left` : "Exam Today";
+    return days > 0 ? `${days} days left` : days === 0 ? "Exam Today" : "Exam Passed";
   };
 
   const saveSubjectData = () => {
@@ -88,7 +88,7 @@ export default function Dashboard() {
             {isRunning ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
             <span className="font-bold tracking-widest">{isRunning ? "PAUSE" : "START"}</span>
           </button>
-          <button onClick={() => setTimeLeft(25 * 60)} className="p-4 bg-monk-bg rounded-btn text-monk-muted">
+          <button onClick={() => { vibrate(20); setTimeLeft(25 * 60); setIsRunning(false); }} className="p-4 bg-monk-bg rounded-btn text-monk-muted">
             <RotateCcw size={20} />
           </button>
         </div>
@@ -100,8 +100,8 @@ export default function Dashboard() {
         {subjects.map((sub) => (
           <div 
             key={sub.id} 
-            onClick={() => { vibrate(20); setSelectedSub(sub); setExamDate(sub.nextExam); }}
-            className="matte-card p-5 space-y-4 active:scale-[0.98] transition-transform"
+            onClick={() => { vibrate(20); setSelectedSub(sub); setExamDate(sub.nextExam || ""); }}
+            className="matte-card p-5 space-y-4 active:scale-[0.98] transition-transform cursor-pointer"
           >
             <div className="flex justify-between items-start">
               <div>
@@ -118,7 +118,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Display Top 2 Drive Notes */}
             <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
               {sub.notes.slice(-2).map((note: any, i: number) => (
                 <div key={i} className="flex-shrink-0 bg-monk-bg/50 px-3 py-2 rounded-lg flex items-center gap-2 border border-monk-sand/20">
@@ -151,18 +150,16 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* Exam Date & Countdown */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Next Exam Date</label>
                 <input 
                   type="date" 
                   value={examDate}
                   onChange={(e) => setExamDate(e.target.value)}
-                  className="w-full p-3 bg-monk-bg rounded-xl font-bold text-monk-dark outline-none focus:ring-2 ring-monk-olive/30"
+                  className="w-full p-3 bg-monk-bg rounded-xl font-bold text-monk-dark outline-none"
                 />
               </div>
 
-              {/* Marks Entry */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Latest Marks (e.g. 85/100)</label>
                 <input 
@@ -174,11 +171,10 @@ export default function Dashboard() {
                 />
               </div>
 
-              {/* Notes Link Upload */}
               <div className="space-y-3">
-                <label className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Add Drive Notes</ts>
+                <label className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">Add Drive Notes</label>
                 <input 
-                  type="text" placeholder="Note Title (e.g. Physics Ch 1)"
+                  type="text" placeholder="Note Title"
                   value={noteTitle} onChange={(e) => setNoteTitle(e.target.value)}
                   className="w-full p-3 bg-monk-bg rounded-xl text-sm outline-none"
                 />
@@ -201,4 +197,5 @@ export default function Dashboard() {
       </AnimatePresence>
     </div>
   );
-}
+                      }
+        
