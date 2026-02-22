@@ -4,11 +4,9 @@
 
 @layer base {
   body {
-    @apply bg-monk-bg text-monk-textMain font-body antialiased selection:bg-monk-olive selection:text-white;
+    /* We use monk-bg and text-monk-textMain which are defined in your config */
+    @apply bg-monk-bg text-monk-textMain antialiased;
     overscroll-behavior-y: none; 
-  }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-sans;
   }
 }
 
