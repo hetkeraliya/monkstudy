@@ -165,5 +165,4 @@ export default function Analysis() {
       </section>
     </div>
   );
-        }
-            
+}
