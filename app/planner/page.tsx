@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Book, Coffee, Sunset, Pencil, X, Plus, Save } from "lucide-react";
+import { Clock, Book, Coffee, Sunset, Pencil, X, Plus, Save, Trash2 } from "lucide-react";
 import { vibrate } from "../../lib/db";
 
 interface ScheduleItem {
@@ -39,6 +39,11 @@ export default function Planner() {
   }, [mounted]);
 
   useEffect(() => setMounted(true), []);
+
+  const updateItem = (id: string, updates: Partial<ScheduleItem>) => {
+    setSchedule(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+  };
+
   if (!mounted) return null;
 
   return (
@@ -52,11 +57,11 @@ export default function Planner() {
           onClick={() => { vibrate(30); setIsEditing(!isEditing); }}
           className={`p-3 rounded-2xl transition-all ${isEditing ? 'bg-monk-dark text-white' : 'bg-white shadow-matte text-monk-muted'}`}
         >
-          {isEditing ? <X size={20} /> : <Pencil size={20} />}
+          {isEditing ? <Save size={20} /> : <Pencil size={20} />}
         </button>
       </header>
 
-      {/* Day Progress Bar */}
+      {/* Day Progress Bar (7 AM - 5 PM) */}
       <section className="matte-card p-5 space-y-3 shadow-matte">
         <div className="flex justify-between items-end">
           <span className="text-[10px] font-bold text-monk-muted uppercase tracking-widest">School Day Progress</span>
@@ -70,26 +75,66 @@ export default function Planner() {
         </div>
       </section>
 
-      {/* Editable List */}
+      {/* Schedule List */}
       <div className="space-y-4">
         <AnimatePresence mode="popLayout">
-          {schedule.sort((a,b) => a.time.localeCompare(b.time)).map((item, i) => (
+          {schedule.sort((a,b) => a.time.localeCompare(b.time)).map((item) => (
             <motion.div 
               key={item.id} layout
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className={`matte-card p-5 flex items-center gap-5 border-l-4 ${item.type === 'Study' ? 'border-monk-olive bg-monk-olive/5' : 'border-monk-sand'}`}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`matte-card p-5 border-l-4 transition-all ${
+                item.type === 'Study' ? 'border-monk-olive bg-monk-olive/5' : 
+                item.type === 'Break' ? 'border-monk-sand bg-monk-bg/30' : 'border-monk-dark bg-white'
+              }`}
             >
-              <div className="flex-1">
-                <p className="text-[10px] font-black uppercase text-monk-muted mb-1">{item.time}</p>
-                <h3 className="text-sm font-bold text-monk-dark">{item.task}</h3>
-              </div>
-              {isEditing && (
-                <button 
-                  onClick={() => { vibrate(50); setSchedule(schedule.filter(s => s.id !== item.id)); }}
-                  className="p-2 text-red-400"
-                >
-                  <X size={18} />
-                </button>
+              {isEditing ? (
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <input 
+                      type="time" 
+                      value={item.time} 
+                      onChange={(e) => updateItem(item.id, { time: e.target.value })}
+                      className="bg-monk-bg p-2 rounded-xl text-xs font-bold outline-none"
+                    />
+                    <select 
+                      value={item.type} 
+                      onChange={(e) => updateItem(item.id, { type: e.target.value as any })}
+                      className="flex-1 bg-monk-bg p-2 rounded-xl text-[10px] font-bold uppercase outline-none"
+                    >
+                      <option value="School">School</option>
+                      <option value="Study">Study</option>
+                      <option value="Break">Break</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={item.task} 
+                      onChange={(e) => updateItem(item.id, { task: e.target.value })}
+                      className="flex-1 bg-monk-bg p-3 rounded-xl text-sm font-bold outline-none"
+                    />
+                    <button 
+                      onClick={() => { vibrate(60); setSchedule(schedule.filter(s => s.id !== item.id)); }}
+                      className="p-3 bg-red-50 text-red-400 rounded-xl"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-5">
+                  <div className="text-monk-muted">
+                    {item.type === 'Study' ? <Book size={18} /> : item.type === 'Break' ? <Coffee size={18} /> : <Clock size={18} />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black uppercase text-monk-muted mb-1">{item.time}</p>
+                    <h3 className="text-sm font-bold text-monk-dark">{item.task}</h3>
+                  </div>
+                  {item.type === 'Study' && (
+                    <span className="bg-monk-olive text-white text-[8px] font-black px-2 py-1 rounded-full uppercase">JEE</span>
+                  )}
+                </div>
               )}
             </motion.div>
           ))}
@@ -98,12 +143,13 @@ export default function Planner() {
         {isEditing && (
           <button 
             onClick={() => {
-              const newTask: ScheduleItem = { id: Date.now().toString(), time: "00:00", task: "New Block", type: "Study" };
-              setSchedule([...schedule, newTask]);
+              vibrate(30);
+              const newItem: ScheduleItem = { id: Date.now().toString(), time: "18:00", task: "New Study Session", type: "Study" };
+              setSchedule([...schedule, newItem]);
             }}
-            className="w-full p-4 border-2 border-dashed border-monk-sand rounded-3xl text-[10px] font-bold text-monk-muted uppercase flex items-center justify-center gap-2"
+            className="w-full p-4 border-2 border-dashed border-monk-sand rounded-3xl text-[10px] font-bold text-monk-muted uppercase flex items-center justify-center gap-2 active:bg-monk-bg transition-colors"
           >
-            <Plus size={14} /> Add Schedule Block
+            <Plus size={14} /> Add Block
           </button>
         )}
       </div>
