@@ -1,48 +1,42 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface Task {
+interface ScheduleItem {
   id: string;
-  text: string;
+  time: string;
+  task: string;
+  type: 'School' | 'Study' | 'Break';
   completed: boolean;
-  priority: 'High' | 'Mid' | 'Low';
 }
 
-interface MonkState {
-  xp: number;
-  streak: number;
-  tasks: Task[];
-  subjects: any[];
-  addXp: (amount: number) => void;
-  addTask: (text: string, priority: 'High' | 'Mid' | 'Low') => void;
-  toggleTask: (id: string) => void;
-  deleteTask: (id: string) => void;
-  updateSubject: (id: string, updates: any) => void;
-}
+// ... existing Mark and Exam interfaces
 
-export const useStore = create<MonkState>()(
+export const useStore = create<any>()(
   persist(
     (set) => ({
       xp: 0,
-      streak: 0,
       tasks: [],
-      subjects: [
-        { id: 'phy', name: 'Physics', marks: [], exams: [], notes: [], videos: [] },
-        { id: 'chem', name: 'Chemistry', marks: [], exams: [], notes: [], videos: [] },
-        { id: 'math', name: 'Maths', marks: [], exams: [], notes: [], videos: [] }
+      schedule: [
+        { id: '1', time: "07:00", task: "School Begins", type: "School", completed: false },
+        { id: '2', time: "13:00", task: "Lunch Break", type: "Break", completed: false },
+        { id: '3', time: "17:00", task: "School Ends", type: "School", completed: false },
+        { id: '4', time: "18:30", task: "JEE Prep (Block 1)", type: "Study", completed: false },
+        { id: '5', time: "21:00", task: "JEE Prep (Block 2)", type: "Study", completed: false },
       ],
-      addXp: (amount) => set((state) => ({ xp: state.xp + amount })),
-      addTask: (text, priority) => set((state) => ({
-        tasks: [{ id: Date.now().toString(), text, completed: false, priority }, ...state.tasks]
+      subjects: [
+        { id: 'phy', name: 'Physics', marks: [], exams: [] },
+        { id: 'chem', name: 'Chemistry', marks: [], exams: [] },
+        { id: 'math', name: 'Maths', marks: [], exams: [] }
+      ],
+      addXp: (amount: number) => set((state: any) => ({ xp: state.xp + amount })),
+      updateSchedule: (newSchedule: ScheduleItem[]) => set({ schedule: newSchedule }),
+      toggleSchedule: (id: string) => set((state: any) => ({
+        schedule: state.schedule.map((item: any) => 
+          item.id === id ? { ...item, completed: !item.completed } : item
+        )
       })),
-      toggleTask: (id) => set((state) => ({
-        tasks: state.tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)
-      })),
-      deleteTask: (id) => set((state) => ({
-        tasks: state.tasks.filter(t => t.id !== id)
-      })),
-      updateSubject: (id, updates) => set((state) => ({
-        subjects: state.subjects.map(s => s.id === id ? { ...s, ...updates } : s)
+      updateSubject: (id: string, updates: any) => set((state: any) => ({
+        subjects: state.subjects.map((s: any) => s.id === id ? { ...s, ...updates } : s)
       })),
     }),
     { name: 'monk-core-storage' }
