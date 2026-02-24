@@ -1,13 +1,18 @@
-/** @type {import('next').NextConfig} */
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development", // Only runs in production/Vercel
   register: true,
-  skipWaiting: true,
+  workboxOptions: {
+    disableDevLogs: true,
+  },
 });
 
+/** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Your existing config here (if any)
   reactStrictMode: true,
 };
 
-module.exports = withPWA(nextConfig);
+export default withPWA(nextConfig);
