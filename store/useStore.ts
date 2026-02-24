@@ -31,41 +31,42 @@ export interface Task {
   priority: 'High' | 'Mid' | 'Low';
 }
 
+// Updated with your specific categories: JEE, Normal, Break, Study, Habit, Fun
 export interface ScheduleItem {
   id: string;
   time: string;
   task: string;
-  type: 'School' | 'Study' | 'Break';
+  type: 'JEE' | 'Normal' | 'Break' | 'Study' | 'Habit' | 'Fun';
   completed: boolean;
 }
 
 interface MonkState {
-  // Stats
+  // Global Stats
   xp: number;
   streak: number;
   
-  // Data Arrays
+  // Feature Arrays
   tasks: Task[];
   schedule: ScheduleItem[];
   subjects: Subject[];
 
   // --- Actions ---
 
-  // Global Stats
+  // XP & Progression
   addXp: (amount: number) => void;
   setStreak: (val: number) => void;
 
-  // Task Actions
+  // Mission Control (Tasks)
   addTask: (text: string, priority: 'High' | 'Mid' | 'Low') => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
 
-  // Planner Actions
+  // Monk Planner (Schedule)
   setSchedule: (newSchedule: ScheduleItem[]) => void;
   toggleSchedule: (id: string) => void;
   updateScheduleItem: (id: string, updates: Partial<ScheduleItem>) => void;
 
-  // Subject/Academic Actions
+  // Intelligence (Academic)
   updateSubject: (id: string, updates: Partial<Subject>) => void;
   addMark: (subjectId: string, score: number, total: number) => void;
   addExam: (subjectId: string, exam: Omit<Exam, 'id'>) => void;
@@ -76,16 +77,17 @@ interface MonkState {
 export const useStore = create<MonkState>()(
   persist(
     (set) => ({
-      // Initial State
+      // 1. Initial State
       xp: 0,
       streak: 0,
       tasks: [],
+      // Default Schedule using your requested blocks
       schedule: [
-        { id: '1', time: "07:00", task: "School Begins", type: "School", completed: false },
-        { id: '2', time: "13:00", task: "Lunch Break", type: "Break", completed: false },
-        { id: '3', time: "17:00", task: "School Ends", type: "School", completed: false },
-        { id: '4', time: "18:30", task: "JEE Prep (Block 1)", type: "Study", completed: false },
-        { id: '5', time: "21:00", task: "JEE Prep (Block 2)", type: "Study", completed: false },
+        { id: '1', time: "07:00", task: "School Protocol", type: "Normal", completed: false },
+        { id: '2', time: "13:00", task: "Recharge", type: "Break", completed: false },
+        { id: '3', time: "17:00", task: "School End", type: "Normal", completed: false },
+        { id: '4', time: "18:30", task: "Advanced JEE Prep", type: "JEE", completed: false },
+        { id: '5', time: "21:00", task: "Subject Deep Dive", type: "Study", completed: false },
       ],
       subjects: [
         { id: 'phy', name: 'Physics', marks: [], exams: [] },
@@ -93,11 +95,11 @@ export const useStore = create<MonkState>()(
         { id: 'math', name: 'Maths', marks: [], exams: [] }
       ],
 
-      // Stats Actions
+      // 2. Global Actions
       addXp: (amount) => set((state) => ({ xp: state.xp + amount })),
       setStreak: (val) => set({ streak: val }),
 
-      // Task Actions
+      // 3. Task Actions (Mission Control)
       addTask: (text, priority) => set((state) => ({
         tasks: [{ id: Date.now().toString(), text, completed: false, priority }, ...state.tasks]
       })),
@@ -108,7 +110,7 @@ export const useStore = create<MonkState>()(
         tasks: state.tasks.filter(t => t.id !== id)
       })),
 
-      // Planner Actions
+      // 4. Planner Actions (Monk Schedule)
       setSchedule: (newSchedule) => set({ schedule: newSchedule }),
       toggleSchedule: (id) => set((state) => ({
         schedule: state.schedule.map(item => 
@@ -121,7 +123,7 @@ export const useStore = create<MonkState>()(
         )
       })),
 
-      // Academic Actions
+      // 5. Academic Actions (Intelligence)
       updateSubject: (id, updates) => set((state) => ({
         subjects: state.subjects.map(s => s.id === id ? { ...s, ...updates } : s)
       })),
@@ -139,7 +141,7 @@ export const useStore = create<MonkState>()(
       })),
     }),
     {
-      name: 'monk-core-storage', // Key for localStorage
+      name: 'monk-core-storage', // Persists to Honor 8X LocalStorage
     }
   )
 );
