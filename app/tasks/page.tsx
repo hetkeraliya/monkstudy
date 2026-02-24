@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, CheckCircle2, Circle, AlertCircle, Zap } from "lucide-react";
-import { useStore } from "../../store/useStore"; // Fixed path
+import { Plus, Trash2, Circle, AlertCircle, Zap } from "lucide-react";
+import { useStore } from "../../store/useStore";
 import { vibrate } from "../../lib/db";
 
 export default function Tasks() {
@@ -11,7 +11,7 @@ export default function Tasks() {
   const [input, setInput] = useState("");
   const [priority, setPriority] = useState<'High' | 'Mid' | 'Low'>('High');
   
-  const { tasks, addTask, toggleTask, deleteTask, addXp } = useStore();
+  const { tasks, addTask, deleteTask, addXp } = useStore();
 
   useEffect(() => setMounted(true), []);
 
@@ -23,41 +23,41 @@ export default function Tasks() {
     }
   };
 
-  const handleToggle = (id: string, completed: boolean) => {
-    vibrate(20);
-    toggleTask(id);
-    if (!completed) addXp(10); // +10 XP for JEE prep tasks
+  const handleComplete = (id: string) => {
+    vibrate(40);
+    addXp(10); // Reward 10 XP
+    deleteTask(id); // Auto-delete task
   };
 
   if (!mounted) return null;
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-24 max-w-md mx-auto p-4 bg-[#E2E2E2] min-h-screen">
       <header className="pt-2 flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-monk-dark tracking-tight">Mission Control</h1>
-          <p className="text-[10px] text-monk-muted font-bold uppercase tracking-widest">Target Tracker</p>
+          <h1 className="text-xl font-black text-[#384D48] tracking-tight uppercase">Missions</h1>
+          <p className="text-[8px] text-[#6E7271] font-bold uppercase tracking-widest">Target Tracker</p>
         </div>
-        <div className="flex items-center gap-1 bg-monk-olive/10 px-3 py-1 rounded-full text-monk-olive">
+        <div className="flex items-center gap-1 bg-[#ACAD94]/30 px-3 py-1.5 rounded-full text-[#384D48]">
           <Zap size={12} fill="currentColor" />
-          <span className="text-[10px] font-black uppercase tracking-tighter">Tasks Reward: 10XP</span>
+          <span className="text-[9px] font-black uppercase tracking-tighter">10 XP / Kill</span>
         </div>
       </header>
 
-      {/* Modern Input Bar */}
-      <div className="matte-card p-4 space-y-3 shadow-matte border-b-4 border-monk-sand/20">
+      {/* Input Bar */}
+      <div className="bg-white p-4 rounded-3xl shadow-md border-b-4 border-[#384D48] space-y-3">
         <input 
           type="text" 
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="New study goal..."
-          className="w-full p-4 bg-monk-bg rounded-2xl text-sm font-bold outline-none placeholder:text-monk-sand border-2 border-transparent focus:border-monk-olive/20 transition-all"
+          placeholder="New study target..."
+          className="w-full p-3 bg-[#F5F5F5] rounded-xl text-sm font-bold outline-none text-[#384D48] placeholder:text-[#ACAD94]"
         />
         <div className="flex gap-2">
           <select 
             value={priority} 
             onChange={(e) => setPriority(e.target.value as any)}
-            className="flex-1 p-3 bg-monk-bg rounded-xl text-[10px] font-bold uppercase outline-none text-monk-dark"
+            className="flex-1 p-3 bg-[#F5F5F5] rounded-xl text-[10px] font-bold uppercase outline-none text-[#384D48]"
           >
             <option value="High">HIGH (JEE)</option>
             <option value="Mid">MID (COACHING)</option>
@@ -65,9 +65,9 @@ export default function Tasks() {
           </select>
           <button 
             onClick={handleAdd}
-            className="p-3 bg-monk-dark text-white rounded-xl active:scale-90 transition-transform shadow-lg"
+            className="p-3 bg-[#384D48] text-white rounded-xl active:scale-90 transition-transform shadow-lg"
           >
-            <Plus size={24} />
+            <Plus size={20} />
           </button>
         </div>
       </div>
@@ -77,44 +77,37 @@ export default function Tasks() {
         <AnimatePresence mode="popLayout">
           {tasks.length > 0 ? tasks.map((task) => (
             <motion.div 
-              key={task.id}
-              layout
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className={`matte-card p-4 flex items-center justify-between border-l-4 transition-all ${
-                task.completed ? 'opacity-40 grayscale' : 'opacity-100'
+              key={task.id} layout
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, x: 50 }}
+              className={`bg-white p-4 flex items-center justify-between border-l-4 rounded-2xl shadow-sm ${
+                task.priority === 'High' ? 'border-[#384D48]' : task.priority === 'Mid' ? 'border-[#ACAD94]' : 'border-[#6E7271]'
               }`}
-              style={{ borderLeftColor: task.priority === 'High' ? '#ef4444' : task.priority === 'Mid' ? '#fb923c' : '#60a5fa' }}
             >
-              <div className="flex items-center gap-3 flex-1 overflow-hidden" onClick={() => handleToggle(task.id, task.completed)}>
-                <button className="text-monk-olive flex-shrink-0">
-                  {task.completed ? <CheckCircle2 size={22} /> : <Circle size={22} />}
+              <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                <button onClick={() => handleComplete(task.id)} className="text-[#384D48] flex-shrink-0 hover:text-[#ACAD94]">
+                  <Circle size={22} />
                 </button>
                 <div className="flex flex-col truncate">
-                  <span className={`text-sm font-bold truncate ${task.completed ? 'line-through' : 'text-monk-dark'}`}>
+                  <span className="text-[13px] font-bold truncate text-[#384D48]">
                     {task.text}
                   </span>
-                  <span className="text-[8px] font-bold text-monk-muted uppercase tracking-tighter">
+                  <span className="text-[8px] font-black text-[#ACAD94] uppercase tracking-tighter">
                     {task.priority} Priority
                   </span>
                 </div>
               </div>
-              <button 
-                onClick={() => { vibrate(60); deleteTask(task.id); }}
-                className="p-2 text-monk-sand hover:text-red-500 transition-colors"
-              >
-                <Trash2 size={18} />
+              <button onClick={() => { vibrate(60); deleteTask(task.id); }} className="p-2 text-[#D8D4D5] hover:text-red-500 transition-colors">
+                <Trash2 size={16} />
               </button>
             </motion.div>
           )) : (
-            <div className="p-16 text-center bg-monk-bg/30 rounded-[32px] border-2 border-dashed border-monk-sand">
-              <AlertCircle className="mx-auto text-monk-sand mb-2" size={32} />
-              <p className="text-[10px] text-monk-muted font-bold uppercase tracking-widest">No Active Missions</p>
+            <div className="p-10 text-center border-2 border-dashed border-[#ACAD94] rounded-[32px] mt-8">
+              <AlertCircle className="mx-auto text-[#6E7271] mb-2" size={24} />
+              <p className="text-[9px] text-[#384D48] font-black uppercase tracking-widest">No Active Missions</p>
             </div>
           )}
         </AnimatePresence>
       </div>
     </div>
   );
-                    }
+}
