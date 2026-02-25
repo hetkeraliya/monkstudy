@@ -2,7 +2,7 @@ import withPWAInit from "@ducanh2912/next-pwa";
 
 const withPWA = withPWAInit({
   dest: "public",
-  disable: process.env.NODE_ENV === "development", // Only runs in production/Vercel
+  disable: process.env.NODE_ENV === "development",
   register: true,
   workboxOptions: {
     disableDevLogs: true,
@@ -11,8 +11,17 @@ const withPWA = withPWAInit({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Your existing config here (if any)
   reactStrictMode: true,
+  // This Webpack rule acts as a shield against the 'undici' server-bug
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        undici: false,
+      };
+    }
+    return config;
+  },
 };
 
 export default withPWA(nextConfig);
