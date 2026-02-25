@@ -3,32 +3,35 @@
 import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { useStore } from "@/store/useStore"; // Changed from useAuthStore to useStore
+import { useStore } from "@/store/useStore";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Use the main useStore for auth actions
   const setAuthUser = useStore((state) => state.setAuthUser);
   const setAuthLoading = useStore((state) => state.setAuthLoading);
 
   useEffect(() => {
-    // Listen for the Firebase Auth state change
+    // Failsafe: If Firebase takes longer than 3 seconds, force the loading screen to drop
+    const timeout = setTimeout(() => setAuthLoading(false), 3000);
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      clearTimeout(timeout); // Clear failsafe if Firebase responds normally
+      
       if (firebaseUser) {
-        // Map Firebase user data to our store's FirebaseUser interface
         setAuthUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
         });
       } else {
-        // User is logged out
         setAuthUser(null);
       }
-      setAuthLoading(false);
+      setAuthLoading(false); // Turn off the loading spinner
     });
 
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, [setAuthUser, setAuthLoading]);
 
   return <>{children}</>;
