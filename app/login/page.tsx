@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { auth, googleProvider } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
@@ -18,19 +17,18 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const router = useRouter();
   const isAuthenticated = useStore((state) => state.isAuthenticated);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Auto-Redirect to Dashboard if Firebase says you are logged in
+  // Failsafe auto-redirect
   useEffect(() => {
     if (mounted && isAuthenticated) {
-      router.push('/');
+      window.location.href = '/';
     }
-  }, [mounted, isAuthenticated, router]);
+  }, [mounted, isAuthenticated]);
 
   const handleEmailAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
@@ -48,9 +46,11 @@ export default function Login() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      // If successful, the useEffect above will instantly push you to '/'
+      
+      // THE NUCLEAR FIX: Force the browser to the dashboard immediately
+      window.location.href = '/'; 
+      
     } catch (error: any) {
-      // HARDCORE MOBILE DEBUGGER: This forces a system popup on your phone
       alert(`EMAIL FAILED:\nCode: ${error.code}\nMessage: ${error.message}`);
       setLoading(false);
     }
@@ -61,10 +61,12 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Switched to Popup to prevent mobile browser memory wipes
       await signInWithPopup(auth, googleProvider);
+      
+      // THE NUCLEAR FIX: Force the browser to the dashboard immediately
+      window.location.href = '/';
+      
     } catch (error: any) {
-      // HARDCORE MOBILE DEBUGGER
       alert(`GOOGLE FAILED:\nCode: ${error.code}\nMessage: ${error.message}`);
       setLoading(false);
     }
