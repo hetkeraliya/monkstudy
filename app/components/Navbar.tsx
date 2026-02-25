@@ -5,9 +5,8 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, CheckSquare, Calendar, LineChart } from 'lucide-react';
 
-// Self-contained haptics
 const vibrate = (ms: number) => {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+  if (typeof window !== 'undefined' && navigator.vibrate) {
     navigator.vibrate(ms);
   }
 };
@@ -21,84 +20,89 @@ const navItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  
+  // Find which tab is active so the Olive mountain knows where to slide
+  const activeIndex = navItems.findIndex(item => item.path === pathname);
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[999] w-[92%] max-w-md h-24">
-      
-      {/* LAYER 0: Distant Background Mountains (Adds depth to the range) */}
-      <div className="absolute left-[15%] bottom-5 w-10 h-10 bg-[#6E7271] rounded-lg rotate-45 shadow-sm" />
-      <div className="absolute right-[18%] bottom-6 w-12 h-12 bg-[#D8D4D5] rounded-xl rotate-45 shadow-sm opacity-80" />
-      <div className="absolute left-[45%] bottom-4 w-8 h-8 bg-[#6E7271] rounded-md rotate-45 shadow-sm opacity-50" />
+    // Wrapper: Fixed to bottom, ignores clicks in the transparent sky area above the mountains
+    <div className="fixed bottom-0 left-0 w-full h-28 pointer-events-none z-[999] flex justify-center">
+      <div className="relative w-full max-w-md h-full">
+        
+        {/* LAYER 0: Distant Background Peaks (Grays) */}
+        <div className="absolute bottom-0 left-[2%] w-[25%] h-[75%] bg-[#6E7271] opacity-60" style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }} />
+        <div className="absolute bottom-0 left-[28%] w-[45%] h-[85%] bg-[#D8D4D5] opacity-40" style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }} />
+        <div className="absolute bottom-0 right-[5%] w-[30%] h-[70%] bg-[#6E7271] opacity-50" style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }} />
 
-      {/* LAYER 1: The Interactive Mountain Peaks */}
-      <div className="absolute bottom-0 left-0 w-full h-16 flex justify-around items-end px-2 z-10">
-        {navItems.map((item, i) => {
-          const isActive = pathname === item.path;
-          return (
-            <div key={`peak-${i}`} className="relative w-16 h-full flex justify-center items-end">
-              <motion.div
-                className="absolute w-12 h-12 rounded-xl shadow-lg"
-                animate={{
-                  rotate: 45,
-                  // Inactive peaks stick out slightly to form the mountain ridge
-                  // Active peak rises high into the sky
-                  y: isActive ? -28 : -8, 
-                  backgroundColor: isActive ? '#ACAD94' : '#384D48',
-                  scale: isActive ? 1.15 : 0.95
-                }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              />
-            </div>
-          );
-        })}
-      </div>
+        {/* LAYER 1: The Sliding Active Peak (Olive) */}
+        {activeIndex !== -1 && (
+          <motion.div
+            className="absolute bottom-0 w-[25%] h-[95%] bg-[#ACAD94]"
+            style={{ clipPath: 'polygon(50% 0%, 100% 100%, 0% 100%)' }}
+            animate={{ left: `${activeIndex * 25}%` }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          />
+        )}
 
-      {/* LAYER 2: The Mountain Base (Pill) */}
-      {/* This covers the bottom halves of the rotated squares, completing the illusion */}
-      <div className="absolute bottom-0 w-full h-16 bg-[#384D48] rounded-[32px] shadow-[0_20px_40px_-10px_rgba(56,77,72,0.6)] z-20" />
+        {/* LAYER 2: Foreground Mountain Ridge (Dark Green Base) */}
+        {/* This creates a continuous, jagged mountain floor with 4 distinct peaks */}
+        <div 
+          className="absolute bottom-0 w-full h-[65%] bg-[#384D48] shadow-[0_-10px_20px_rgba(56,77,72,0.3)]"
+          style={{ 
+            clipPath: 'polygon(0% 55%, 12.5% 20%, 25% 45%, 37.5% 15%, 50% 50%, 62.5% 10%, 75% 40%, 87.5% 25%, 100% 60%, 100% 100%, 0% 100%)' 
+          }} 
+        />
+        
+        {/* Base block to ensure no gaps at the very bottom edge of your screen */}
+        <div className="absolute bottom-0 w-full h-4 bg-[#384D48]" />
 
-      {/* LAYER 3: The Foreground Icons & Text */}
-      <div className="absolute bottom-0 w-full h-16 flex justify-around items-center px-2 z-30">
-        {navItems.map((item) => {
-          const isActive = pathname === item.path;
-          const Icon = item.icon;
-          
-          return (
-            <Link 
-              key={item.path} 
-              href={item.path} 
-              onClick={() => vibrate(20)}
-              className="relative w-16 h-full flex flex-col items-center justify-center"
-            >
-              <motion.div 
-                animate={{ y: isActive ? -20 : 0 }} 
-                className="flex flex-col items-center"
+        {/* LAYER 3: The Icons and Labels */}
+        <div className="absolute bottom-0 w-full h-full flex">
+          {navItems.map((item) => {
+            const isActive = pathname === item.path;
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                onClick={() => vibrate(20)}
+                // Re-enable clicks specifically on the buttons
+                className="relative w-1/4 h-full flex flex-col justify-end items-center pb-4 pointer-events-auto"
               >
-                {/* Icon changes to Dark Green when on the Olive mountain peak */}
-                <Icon 
-                  size={22} 
-                  className={isActive ? 'text-[#384D48]' : 'text-[#ACAD94] opacity-80'} 
-                  strokeWidth={isActive ? 2.5 : 2} 
-                />
-                
-                {/* Appears in the valley below the active peak */}
-                <AnimatePresence>
-                  {isActive && (
-                    <motion.span 
-                      initial={{ opacity: 0, scale: 0.5, y: -5 }} 
-                      animate={{ opacity: 1, scale: 1, y: 2 }} 
-                      exit={{ opacity: 0, scale: 0.5 }}
-                      className="absolute -bottom-5 text-[8px] font-black text-[#E2E2E2] uppercase tracking-[0.2em] whitespace-nowrap"
-                    >
-                      {item.name}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            </Link>
-          );
-        })}
+                <motion.div 
+                  animate={{ y: isActive ? -36 : 0 }}
+                  className="flex flex-col items-center"
+                >
+                  {/* Icon */}
+                  <div className={`p-2 rounded-full ${isActive ? 'bg-[#384D48]/10 backdrop-blur-[2px]' : ''}`}>
+                    <Icon 
+                      size={isActive ? 24 : 20} 
+                      className={isActive ? 'text-[#384D48]' : 'text-[#ACAD94] opacity-60 hover:opacity-100'} 
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                  </div>
+                  
+                  {/* Label (Pushed down into the dark green valley) */}
+                  <AnimatePresence>
+                    {isActive && (
+                      <motion.span
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 26 }} 
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute text-[8px] font-black text-[#E2E2E2] uppercase tracking-[0.1em]"
+                      >
+                        {item.name}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              </Link>
+            );
+          })}
+        </div>
+
       </div>
     </div>
   );
-                }
+}
