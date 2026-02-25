@@ -1,19 +1,33 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
-// TODO: Replace this object with the one from your Firebase Project Settings
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAMIpQpdtzEDbXMIxjRAwxRbJ0ucrq75ZQ",
+  authDomain: "monkstudy.firebaseapp.com",
+  projectId: "monkstudy",
+  storageBucket: "monkstudy.firebasestorage.app",
+  messagingSenderId: "980151116450",
+  appId: "1:980151116450:web:caef6c5ca9232dc40badfb",
+  measurementId: "G-Z7GYV4LEKD"
 };
 
-// Initialize Firebase (prevents re-initializing in Next.js during hot reloads)
+// 1. Initialize Firebase safely for Next.js 
+// (This prevents the "Firebase App already exists" error on Vercel)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
+// 2. Initialize Authentication Services
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-export { app, auth, googleProvider };
+// 3. Initialize Analytics safely (Only runs in the browser, not on the server)
+let analytics;
+if (typeof window !== "undefined") {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+    }
+  });
+}
+
+export { app, auth, googleProvider, analytics };
