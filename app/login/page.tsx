@@ -5,10 +5,10 @@ import { auth, googleProvider } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInWithPopup 
+  signInWithRedirect,
+  onAuthStateChanged
 } from 'firebase/auth';
 import { Target } from 'lucide-react';
-import { useStore } from '@/store/useStore';
 
 export default function Login() {
   const [mounted, setMounted] = useState(false);
@@ -16,19 +16,21 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const isAuthenticated = useStore((state) => state.isAuthenticated);
+  const [status, setStatus] = useState('');
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // DIRECT FIREBASE LISTENER: Bypasses the storage glitch
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setStatus('Identity Confirmed. Entering OS...');
+        window.location.href = '/'; // Hard redirect
+      }
+    });
 
-  // Failsafe auto-redirect
-  useEffect(() => {
-    if (mounted && isAuthenticated) {
-      window.location.href = '/';
-    }
-  }, [mounted, isAuthenticated]);
+    return () => unsubscribe();
+  }, []);
 
   const handleEmailAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
@@ -39,6 +41,7 @@ export default function Login() {
     }
 
     setLoading(true);
+    setStatus('Verifying credentials...');
 
     try {
       if (isRegistering) {
@@ -46,29 +49,26 @@ export default function Login() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      
-      // THE NUCLEAR FIX: Force the browser to the dashboard immediately
-      window.location.href = '/'; 
-      
+      // The listener above will catch the success and redirect
     } catch (error: any) {
-      alert(`EMAIL FAILED:\nCode: ${error.code}\nMessage: ${error.message}`);
+      alert(`FAILED:\n${error.message}`);
       setLoading(false);
+      setStatus('');
     }
   };
 
   const handleGoogleAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
     setLoading(true);
+    setStatus('Connecting to Google...');
 
     try {
-      await signInWithPopup(auth, googleProvider);
-      
-      // THE NUCLEAR FIX: Force the browser to the dashboard immediately
-      window.location.href = '/';
-      
+      // Best for mobile devices
+      await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
-      alert(`GOOGLE FAILED:\nCode: ${error.code}\nMessage: ${error.message}`);
+      alert(`GOOGLE FAILED:\n${error.message}`);
       setLoading(false);
+      setStatus('');
     }
   };
 
@@ -87,6 +87,12 @@ export default function Login() {
             {isRegistering ? 'Initialize Sanctuary' : 'Access Protocol'}
           </p>
         </div>
+
+        {status && (
+          <div className="bg-[#F5F5F5] text-[#384D48] text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-xl mb-4 text-center animate-pulse">
+            {status}
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>
@@ -121,7 +127,7 @@ export default function Login() {
 
           <div className="text-center mt-2">
             <button 
-              onClick={() => { setIsRegistering(!isRegistering); }}
+              onClick={() => { setIsRegistering(!isRegistering); setStatus(''); }}
               className="text-[#6E7271] text-[11px] font-bold uppercase tracking-widest p-2 active:scale-95 transition-transform"
             >
               {isRegistering ? 'Already have access? Login' : 'Need a sanctuary? Create one'}
