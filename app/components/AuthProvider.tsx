@@ -3,27 +3,33 @@
 import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { useAuthStore } from "@/store/useStore";
+import { useStore } from "@/store/useStore"; // Changed from useAuthStore to useStore
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-const setAuthUser = useStore((state) => state.setAuthUser);
+  // Use the main useStore for auth actions
+  const setAuthUser = useStore((state) => state.setAuthUser);
+  const setAuthLoading = useStore((state) => state.setAuthLoading);
 
   useEffect(() => {
-    // This listens for any login/logout events from Firebase
+    // Listen for the Firebase Auth state change
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        setUser({
+        // Map Firebase user data to our store's FirebaseUser interface
+        setAuthUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
         });
       } else {
-        setUser(null);
+        // User is logged out
+        setAuthUser(null);
       }
+      setAuthLoading(false);
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [setUser]);
+  }, [setAuthUser, setAuthLoading]);
 
   return <>{children}</>;
 }
