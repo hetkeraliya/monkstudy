@@ -1,74 +1,60 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { auth, googleProvider } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInWithRedirect,
-  onAuthStateChanged
+  signInWithPopup 
 } from 'firebase/auth';
 import { Target } from 'lucide-react';
 
 export default function Login() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
 
   useEffect(() => {
     setMounted(true);
-    
-    // DIRECT FIREBASE LISTENER: Bypasses the storage glitch
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setStatus('Identity Confirmed. Entering OS...');
-        window.location.href = '/'; // Hard redirect
-      }
-    });
-
-    return () => unsubscribe();
   }, []);
 
   const handleEmailAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
-    
     if (password.length < 6) {
       alert("Password must be at least 6 characters!");
       return;
     }
 
     setLoading(true);
-    setStatus('Verifying credentials...');
-
     try {
       if (isRegistering) {
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      // The listener above will catch the success and redirect
+      // SMOOTH TRANSITION: No browser reloads!
+      router.replace('/'); 
     } catch (error: any) {
       alert(`FAILED:\n${error.message}`);
       setLoading(false);
-      setStatus('');
     }
   };
 
   const handleGoogleAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
     setLoading(true);
-    setStatus('Connecting to Google...');
 
     try {
-      // Best for mobile devices
-      await signInWithRedirect(auth, googleProvider);
+      await signInWithPopup(auth, googleProvider);
+      // SMOOTH TRANSITION: Keeps Firebase memory intact!
+      router.replace('/');
     } catch (error: any) {
       alert(`GOOGLE FAILED:\n${error.message}`);
       setLoading(false);
-      setStatus('');
     }
   };
 
@@ -87,12 +73,6 @@ export default function Login() {
             {isRegistering ? 'Initialize Sanctuary' : 'Access Protocol'}
           </p>
         </div>
-
-        {status && (
-          <div className="bg-[#F5F5F5] text-[#384D48] text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-xl mb-4 text-center animate-pulse">
-            {status}
-          </div>
-        )}
 
         <div className="space-y-4">
           <div>
@@ -127,7 +107,7 @@ export default function Login() {
 
           <div className="text-center mt-2">
             <button 
-              onClick={() => { setIsRegistering(!isRegistering); setStatus(''); }}
+              onClick={() => { setIsRegistering(!isRegistering); }}
               className="text-[#6E7271] text-[11px] font-bold uppercase tracking-widest p-2 active:scale-95 transition-transform"
             >
               {isRegistering ? 'Already have access? Login' : 'Need a sanctuary? Create one'}
@@ -158,4 +138,4 @@ export default function Login() {
       </div>
     </div>
   );
-}
+                }
