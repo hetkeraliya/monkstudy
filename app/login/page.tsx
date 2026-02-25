@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, googleProvider } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInWithPopup 
+  signInWithRedirect 
 } from 'firebase/auth';
 import { Target } from 'lucide-react';
+import { useStore } from '@/store/useStore';
 
 export default function Login() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -16,7 +17,19 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  
   const router = useRouter();
+  
+  // 1. Pull the auth state from your store
+  const isAuthenticated = useStore((state) => state.isAuthenticated);
+  const isAuthLoading = useStore((state) => state.isAuthLoading);
+
+  // 2. THE FIX: Watch for login success and redirect automatically
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
 
   const handleEmailAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
@@ -29,11 +42,10 @@ export default function Login() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      router.push('/'); // Success! Send to dashboard
+      // Email auth doesn't reload the page, so we rely on the useEffect above to redirect
     } catch (error: any) {
-      setErrorMsg(error.message.replace('Firebase: ', '')); // Clean up Firebase errors
+      setErrorMsg(error.message.replace('Firebase: ', ''));
       if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate([50, 50]);
-    } finally {
       setLoading(false);
     }
   };
@@ -44,14 +56,22 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await signInWithPopup(auth, googleProvider);
-      router.push('/');
+      // 3. Mobile safe: Redirect to Google. The page will reload upon return.
+      await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
       setErrorMsg(error.message.replace('Firebase: ', ''));
-    } finally {
       setLoading(false);
     }
   };
+
+  // Prevent flashing the login screen if Firebase is still checking the user status
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#E2E2E2] flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-[#384D48] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#E2E2E2] flex flex-col justify-center items-center p-6 selection:bg-[#ACAD94] selection:text-[#384D48]">
