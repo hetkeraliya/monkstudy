@@ -6,7 +6,7 @@ import { auth } from "@/lib/firebase";
 import { useAuthStore } from "@/store/useStore";
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const setUser = useAuthStore((state) => state.setUser);
+const setAuthUser = useStore((state) => state.setAuthUser);
 
   useEffect(() => {
     // This listens for any login/logout events from Firebase
