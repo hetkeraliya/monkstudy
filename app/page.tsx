@@ -1,36 +1,42 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
 import { User, Flame, Target, Play, BookOpen } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function Dashboard() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [firebaseChecked, setFirebaseChecked] = useState(false);
   
   // Pulling state from our Firebase-integrated store
-  const isAuthenticated = useStore((state) => state.isAuthenticated);
-  const isAuthLoading = useStore((state) => state.isAuthLoading);
   const user = useStore((state) => state.user);
   const subjects = useStore((state) => state.subjects);
   const xp = useStore((state) => state.xp);
   const streak = useStore((state) => state.streak);
 
-  // Hydration fix & Auth Guard
+  // Hydration fix & BULLETPROOF Auth Guard
   useEffect(() => {
     setMounted(true);
+
+    // DIRECT FIREBASE LISTENER: Wait for Google's server, ignore local storage glitches
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) {
+        // Only kick them out to login if Firebase absolutely confirms they are logged out
+        window.location.href = '/login'; 
+      } else {
+        // Firebase confirms login, allow the dashboard to render
+        setFirebaseChecked(true); 
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (mounted && !isAuthLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [mounted, isAuthLoading, isAuthenticated, router]);
-
-  // Prevent UI flashing while checking authentication
-  if (!mounted || isAuthLoading || !isAuthenticated) {
+  // Prevent UI flashing while checking authentication with Google
+  if (!mounted || !firebaseChecked) {
     return (
       <div className="min-h-screen bg-[#E2E2E2] flex justify-center items-center">
         <div className="w-8 h-8 border-4 border-[#384D48] border-t-transparent rounded-full animate-spin"></div>
@@ -174,7 +180,7 @@ export default function Dashboard() {
                   onClick={(e) => {
                     e.stopPropagation();
                     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-                    // Add routing to specific subject page here: router.push(`/subjects/${subject.id}`)
+                    // Add routing to specific subject page here: window.location.href = `/subjects/${subject.id}`
                   }}
                 >
                   Enter
@@ -187,5 +193,5 @@ export default function Dashboard() {
 
     </div>
   );
-        }
-        
+      }
+            
