@@ -12,6 +12,7 @@ import { Target } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 export default function Login() {
+  const [mounted, setMounted] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,16 +21,19 @@ export default function Login() {
   
   const router = useRouter();
   
-  // 1. Pull the auth state from your store
   const isAuthenticated = useStore((state) => state.isAuthenticated);
-  const isAuthLoading = useStore((state) => state.isAuthLoading);
 
-  // 2. THE FIX: Watch for login success and redirect automatically
+  // 1. Hydration Fix: Ensure the component is mounted before doing anything
   useEffect(() => {
-    if (isAuthenticated) {
+    setMounted(true);
+  }, []);
+
+  // 2. Auto-Redirect: If Firebase confirms you are logged in, send you to the dashboard
+  useEffect(() => {
+    if (mounted && isAuthenticated) {
       router.push('/');
     }
-  }, [isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
 
   const handleEmailAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
@@ -42,7 +46,6 @@ export default function Login() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      // Email auth doesn't reload the page, so we rely on the useEffect above to redirect
     } catch (error: any) {
       setErrorMsg(error.message.replace('Firebase: ', ''));
       if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate([50, 50]);
@@ -56,7 +59,6 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // 3. Mobile safe: Redirect to Google. The page will reload upon return.
       await signInWithRedirect(auth, googleProvider);
     } catch (error: any) {
       setErrorMsg(error.message.replace('Firebase: ', ''));
@@ -64,14 +66,8 @@ export default function Login() {
     }
   };
 
-  // Prevent flashing the login screen if Firebase is still checking the user status
-  if (isAuthLoading) {
-    return (
-      <div className="min-h-screen bg-[#E2E2E2] flex justify-center items-center">
-        <div className="w-8 h-8 border-4 border-[#384D48] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  // Prevent UI flashing during Next.js hydration
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-[#E2E2E2] flex flex-col justify-center items-center p-6 selection:bg-[#ACAD94] selection:text-[#384D48]">
@@ -157,4 +153,5 @@ export default function Login() {
       </div>
     </div>
   );
-}
+  }
+      
