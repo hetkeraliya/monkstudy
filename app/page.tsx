@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; // <-- Added this back
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
 import { User, Flame, Target, Play, BookOpen } from 'lucide-react';
@@ -8,34 +9,30 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 export default function Dashboard() {
+  const router = useRouter(); // <-- Initialize router
   const [mounted, setMounted] = useState(false);
   const [firebaseChecked, setFirebaseChecked] = useState(false);
   
-  // Pulling state from our Firebase-integrated store
   const user = useStore((state) => state.user);
   const subjects = useStore((state) => state.subjects);
   const xp = useStore((state) => state.xp);
   const streak = useStore((state) => state.streak);
 
-  // Hydration fix & BULLETPROOF Auth Guard
   useEffect(() => {
     setMounted(true);
 
-    // DIRECT FIREBASE LISTENER: Wait for Google's server, ignore local storage glitches
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (!firebaseUser) {
-        // Only kick them out to login if Firebase absolutely confirms they are logged out
-        window.location.href = '/login'; 
+        // SMOOTH TRANSITION: Send back to login without browser wipe
+        router.replace('/login'); 
       } else {
-        // Firebase confirms login, allow the dashboard to render
         setFirebaseChecked(true); 
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
-  // Prevent UI flashing while checking authentication with Google
   if (!mounted || !firebaseChecked) {
     return (
       <div className="min-h-screen bg-[#E2E2E2] flex justify-center items-center">
@@ -46,6 +43,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#E2E2E2] pb-24 px-5 pt-6 selection:bg-[#ACAD94] selection:text-[#384D48]">
+      {/* ... KEEP THE REST OF YOUR DASHBOARD CODE EXACTLY THE SAME BELOW THIS LINE ... */}
       
       {/* 1. HEADER: Profile Icon & App Title */}
       <header className="flex justify-between items-center mb-8">
@@ -60,7 +58,6 @@ export default function Dashboard() {
           Monk OS
         </h1>
         
-        {/* Empty div to balance flexbox layout */}
         <div className="w-12 h-12"></div>
       </header>
 
@@ -123,7 +120,6 @@ export default function Dashboard() {
           const hours = Math.floor(subject.dailyStudyMinutes / 60);
           const mins = subject.dailyStudyMinutes % 60;
           
-          // SVG Math for the Progress Ring
           const radius = 16;
           const circumference = 2 * Math.PI * radius;
           const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
@@ -133,7 +129,6 @@ export default function Dashboard() {
               key={subject.id} 
               className="bg-[#FFFFFF] rounded-[22px] p-5 shadow-[0_4px_12px_rgba(56,77,72,0.05)] active:scale-[0.98] transition-transform"
             >
-              {/* Card Top: Identity & Ring */}
               <div className="flex justify-between items-center mb-4">
                 <h4 className="font-black text-[17px] text-[#384D48]">{subject.name}</h4>
                 
@@ -155,7 +150,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Card Middle: Chapter Progress */}
               <div className="mb-5">
                 <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest mb-1">Current Focus</p>
                 <p className="font-bold text-[14px] text-[#111827] mb-3">{subject.currentChapter}</p>
@@ -168,7 +162,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Card Bottom: Stats & Action */}
               <div className="flex justify-between items-end mt-2">
                 <div>
                   <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest mb-0.5">Time Logged</p>
@@ -180,7 +173,6 @@ export default function Dashboard() {
                   onClick={(e) => {
                     e.stopPropagation();
                     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
-                    // Add routing to specific subject page here: window.location.href = `/subjects/${subject.id}`
                   }}
                 >
                   Enter
@@ -190,8 +182,7 @@ export default function Dashboard() {
           );
         })}
       </div>
-
     </div>
   );
       }
-            
+                  
