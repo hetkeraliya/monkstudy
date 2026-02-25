@@ -1,124 +1,191 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Trophy, Save, ChevronRight, Target, Play, Pause, RotateCcw } from "lucide-react";
-import { useStore } from "../store/useStore";
-import { vibrate } from "../lib/db";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useStore } from '@/store/useStore';
+import { User, Flame, Target, Play, BookOpen } from 'lucide-react';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const { subjects, addXp, addMark } = useStore();
-  const [timeLeft, setTimeLeft] = useState(25 * 60);
-  const [isRunning, setIsRunning] = useState(false);
-  const [activeSub, setActiveSub] = useState<any>(null);
-  const [view, setView] = useState<'menu' | 'exam'>('menu');
+  
+  // Pulling state from our Firebase-integrated store
+  const isAuthenticated = useStore((state) => state.isAuthenticated);
+  const isAuthLoading = useStore((state) => state.isAuthLoading);
+  const user = useStore((state) => state.user);
+  const subjects = useStore((state) => state.subjects);
+  const xp = useStore((state) => state.xp);
+  const streak = useStore((state) => state.streak);
 
-  // Hard-locked Marks System
-  const [score, setScore] = useState("");
-  const totalMarks = 300; // JEE Advanced Standard locked permanently
-
+  // Hydration fix & Auth Guard
   useEffect(() => {
     setMounted(true);
-    let interval: NodeJS.Timeout;
-    if (isRunning && timeLeft > 0) interval = setInterval(() => setTimeLeft(p => p - 1), 1000);
-    else if (timeLeft === 0) { vibrate([100, 50, 100]); setIsRunning(false); addXp(50); setTimeLeft(25 * 60); }
-    return () => clearInterval(interval);
-  }, [isRunning, timeLeft, addXp]);
+  }, []);
 
-  if (!mounted) return null;
-
-  const handleSaveMarks = () => {
-    const numScore = Number(score);
-    if (!score || numScore > 300 || numScore < 0 || !activeSub) {
-      vibrate([50, 50]); // Error vibration
-      return; 
+  useEffect(() => {
+    if (mounted && !isAuthLoading && !isAuthenticated) {
+      router.push('/login');
     }
-    addMark(activeSub.id, numScore, totalMarks);
-    setScore(""); 
-    vibrate(40);
-    setView('menu');
-  };
+  }, [mounted, isAuthLoading, isAuthenticated, router]);
+
+  // Prevent UI flashing while checking authentication
+  if (!mounted || isAuthLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#E2E2E2] flex justify-center items-center">
+        <div className="w-8 h-8 border-4 border-[#384D48] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 pb-24 max-w-md mx-auto p-4 bg-[#E2E2E2] min-h-screen">
+    <div className="min-h-screen bg-[#E2E2E2] pb-24 px-5 pt-6 selection:bg-[#ACAD94] selection:text-[#384D48]">
       
-      {/* Pomodoro Timer */}
-      <div className="bg-white p-8 rounded-[32px] flex flex-col items-center shadow-md border border-[#D8D4D5]">
-        <Target size={16} className="text-[#ACAD94] mb-2" />
-        <h2 className="text-7xl font-black text-[#384D48] tabular-nums tracking-tighter">
-          {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+      {/* 1. HEADER: Profile Icon & App Title */}
+      <header className="flex justify-between items-center mb-8">
+        <Link 
+          href="/profile" 
+          className="w-12 h-12 bg-[#FFFFFF] rounded-[16px] shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center justify-center active:scale-95 transition-transform"
+        >
+          <User className="text-[#384D48]" size={22} strokeWidth={2.5} />
+        </Link>
+        
+        <h1 className="text-[#384D48] font-black tracking-[0.2em] text-[11px] uppercase">
+          Monk OS
+        </h1>
+        
+        {/* Empty div to balance flexbox layout */}
+        <div className="w-12 h-12"></div>
+      </header>
+
+      {/* 2. GREETING & QUICK STATS */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-black text-[#384D48] tracking-tight mb-4">
+          Welcome back,<br />
+          <span className="text-[#ACAD94]">{user?.displayName?.split(' ')[0] || "Initiate"}</span>.
         </h2>
-        <div className="flex gap-4 mt-8">
-          <button onClick={() => { vibrate(30); setIsRunning(!isRunning); }} className="bg-[#384D48] text-white px-10 py-4 rounded-2xl flex items-center gap-2 active:scale-95 shadow-lg">
-            {isRunning ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
-            <span className="font-black tracking-widest text-sm uppercase">START</span>
-          </button>
-          <button onClick={() => setTimeLeft(25 * 60)} className="p-4 bg-[#F5F5F5] text-[#6E7271] rounded-2xl active:scale-95">
-            <RotateCcw size={20} />
-          </button>
+
+        <div className="flex gap-4">
+          <div className="flex-1 bg-[#FFFFFF] rounded-[20px] p-4 shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#F5F5F5] rounded-xl flex items-center justify-center">
+              <Flame className="text-[#ACAD94]" size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest">Streak</p>
+              <p className="text-lg font-black text-[#384D48]">{streak} Days</p>
+            </div>
+          </div>
+
+          <div className="flex-1 bg-[#FFFFFF] rounded-[20px] p-4 shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#F5F5F5] rounded-xl flex items-center justify-center">
+              <Target className="text-[#384D48]" size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest">Focus XP</p>
+              <p className="text-lg font-black text-[#384D48]">{xp}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <section className="space-y-3">
-        <h3 className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest px-1">Academic Control</h3>
-        {subjects.map((sub) => (
-          <div key={sub.id} onClick={() => { vibrate(20); setActiveSub(sub); setView('menu'); }} className="bg-white p-5 rounded-2xl flex justify-between items-center cursor-pointer active:scale-95 transition-all shadow-sm border-l-4 border-[#384D48]">
-            <h2 className="text-lg font-black text-[#384D48]">{sub.name}</h2>
-            <ChevronRight className="text-[#ACAD94]" />
+      {/* 3. QUICK ACTION: Pomodoro Trigger */}
+      <button 
+        className="w-full bg-[#384D48] text-[#FFFFFF] rounded-[20px] p-5 shadow-[0_4px_12px_rgba(56,77,72,0.08)] flex justify-between items-center mb-8 active:scale-[0.98] transition-transform"
+        onClick={() => { if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20); }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-[#FFFFFF]/10 rounded-xl flex items-center justify-center">
+            <Play className="text-[#FFFFFF]" size={20} fill="currentColor" />
           </div>
-        ))}
-      </section>
+          <div className="text-left">
+            <p className="font-black text-[15px] tracking-wide">Deep Work Protocol</p>
+            <p className="text-xs text-[#ACAD94] font-bold mt-0.5">Start 25m Timer</p>
+          </div>
+        </div>
+      </button>
 
-      {/* Pop-up Command Box */}
-      <AnimatePresence>
-        {activeSub && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveSub(null)} className="absolute inset-0 bg-[#384D48]/60 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-sm bg-[#E2E2E2] rounded-[32px] p-6 space-y-6 shadow-2xl">
-              <div className="flex justify-between items-center">
-                <h3 className="font-black text-[#384D48] text-xl">{activeSub.name}</h3>
-                <button onClick={() => view === 'menu' ? setActiveSub(null) : setView('menu')} className="p-2 bg-white rounded-full text-[#6E7271]"><X size={18} /></button>
+      {/* 4. SUBJECT CARDS GRID */}
+      <div className="flex items-center justify-between mb-4 px-1">
+        <h3 className="text-[11px] font-black text-[#6E7271] uppercase tracking-widest flex items-center gap-2">
+          <BookOpen size={14} /> Active Syllabus
+        </h3>
+      </div>
+
+      <div className="space-y-4">
+        {subjects.map((subject) => {
+          const progressPercent = Math.round((subject.completedChapters / subject.totalChapters) * 100);
+          const hours = Math.floor(subject.dailyStudyMinutes / 60);
+          const mins = subject.dailyStudyMinutes % 60;
+          
+          // SVG Math for the Progress Ring
+          const radius = 16;
+          const circumference = 2 * Math.PI * radius;
+          const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+
+          return (
+            <div 
+              key={subject.id} 
+              className="bg-[#FFFFFF] rounded-[22px] p-5 shadow-[0_4px_12px_rgba(56,77,72,0.05)] active:scale-[0.98] transition-transform"
+            >
+              {/* Card Top: Identity & Ring */}
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-black text-[17px] text-[#384D48]">{subject.name}</h4>
+                
+                <div className="relative w-10 h-10 flex items-center justify-center">
+                  <svg className="w-10 h-10 transform -rotate-90">
+                    <circle cx="20" cy="20" r={radius} fill="none" stroke="#F5F5F5" strokeWidth="4" />
+                    <circle 
+                      cx="20" cy="20" r={radius} 
+                      fill="none" 
+                      stroke="#ACAD94" 
+                      strokeWidth="4" 
+                      strokeLinecap="round"
+                      strokeDasharray={circumference}
+                      strokeDashoffset={strokeDashoffset}
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  </svg>
+                  <span className="absolute text-[9px] font-black text-[#384D48]">{progressPercent}%</span>
+                </div>
               </div>
 
-              {view === 'menu' && (
-                <button onClick={() => setView('exam')} className="w-full flex items-center justify-center gap-3 p-6 bg-white rounded-2xl shadow-sm">
-                  <Trophy className="text-[#ACAD94]" size={24} />
-                  <span className="text-xs font-black uppercase text-[#384D48] tracking-widest">Enter Mock Score</span>
-                </button>
-              )}
-
-              {/* 300 Max Marks Entry Logic */}
-              {view === 'exam' && (
-                <div className="space-y-4">
-                  <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest text-center">JEE Advanced Mock Entry</p>
-                  <div className="flex gap-2">
-                    <div className="flex-1 relative">
-                      <p className="text-[8px] font-bold text-[#6E7271] absolute top-2 left-3 uppercase">Obtained</p>
-                      <input 
-                        type="number" 
-                        value={score} 
-                        onChange={e => {
-                          const val = Number(e.target.value);
-                          if (val <= 300) setScore(e.target.value); // Locks input above 300
-                        }} 
-                        className="w-full pt-6 pb-2 px-3 rounded-xl bg-white outline-none font-black text-xl text-[#384D48]" 
-                      />
-                    </div>
-                    <div className="flex-1 relative opacity-70">
-                      <p className="text-[8px] font-bold text-[#6E7271] absolute top-2 left-3 uppercase">Total Marks</p>
-                      <input type="number" value={totalMarks} disabled className="w-full pt-6 pb-2 px-3 rounded-xl bg-[#D8D4D5] outline-none font-black text-xl text-[#6E7271]" />
-                    </div>
-                  </div>
-                  <button onClick={handleSaveMarks} className="w-full p-4 bg-[#384D48] text-white rounded-xl flex items-center justify-center gap-2 font-black uppercase text-xs active:scale-95 transition-all">
-                    <Save size={16} /> Save Intel
-                  </button>
+              {/* Card Middle: Chapter Progress */}
+              <div className="mb-5">
+                <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest mb-1">Current Focus</p>
+                <p className="font-bold text-[14px] text-[#111827] mb-3">{subject.currentChapter}</p>
+                
+                <div className="h-1.5 w-full bg-[#F5F5F5] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#384D48] rounded-full transition-all duration-1000 ease-out" 
+                    style={{ width: `${progressPercent}%` }}
+                  ></div>
                 </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </div>
+
+              {/* Card Bottom: Stats & Action */}
+              <div className="flex justify-between items-end mt-2">
+                <div>
+                  <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest mb-0.5">Time Logged</p>
+                  <p className="font-bold text-[13px] text-[#384D48]">{hours}h {mins}m today</p>
+                </div>
+                
+                <button 
+                  className="bg-[#F5F5F5] text-[#384D48] px-4 py-2 rounded-[12px] text-xs font-black uppercase tracking-widest active:bg-[#E2E2E2] transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(10);
+                    // Add routing to specific subject page here: router.push(`/subjects/${subject.id}`)
+                  }}
+                >
+                  Enter
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
     </div>
   );
-}
+        }
+        
