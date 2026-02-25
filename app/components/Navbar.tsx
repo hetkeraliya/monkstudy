@@ -1,9 +1,31 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
+// ... your other imports (like Home, User icons, etc.)
+
+
+  // If we are on the login page, render absolutely nothing.
+
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, CheckSquare, Calendar, LineChart } from 'lucide-react';
+ 
+export default function Navbar() {
+  const pathname = usePathname();   
+  if (pathname === '/login') {
+    return null; 
+  }
+
+  // Otherwise, render the normal Navbar
+  return (
+    <nav className="fixed bottom-0 w-full bg-[#FFFFFF] border-t border-[#E2E2E2] pb-safe pt-2 px-6 flex justify-between items-center z-50">
+      {/* Your Navbar buttons go here */}
+      <p>Test Navbar</p>
+    </nav>
+  );
+}
+
 
 const vibrate = (ms: number) => {
   if (typeof window !== 'undefined' && navigator.vibrate) {
