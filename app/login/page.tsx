@@ -6,8 +6,7 @@ import { auth, googleProvider } from '@/lib/firebase';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInWithRedirect,
-  getRedirectResult 
+  signInWithPopup 
 } from 'firebase/auth';
 import { Target } from 'lucide-react';
 import { useStore } from '@/store/useStore';
@@ -17,53 +16,31 @@ export default function Login() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  
-  // New Diagnostic States
-  const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
-  const [statusText, setStatusText] = useState(''); 
   
   const router = useRouter();
   const isAuthenticated = useStore((state) => state.isAuthenticated);
 
-  // 1. Mount & Check Google Redirect
   useEffect(() => {
     setMounted(true);
-    
-    // THIS CATCHES THE GOOGLE LOGIN WHEN YOU RETURN TO THE PAGE
-    setStatusText('Checking secure connection...');
-    getRedirectResult(auth).then((result) => {
-      if (result) {
-        setStatusText('Google identity confirmed!');
-      } else {
-        setStatusText(''); // Clear text if no redirect happened
-      }
-    }).catch((error) => {
-      setErrorMsg(`Google Error: ${error.message}`);
-      setStatusText('');
-    });
   }, []);
 
-  // 2. Auto-Redirect to Dashboard
+  // Auto-Redirect to Dashboard if Firebase says you are logged in
   useEffect(() => {
     if (mounted && isAuthenticated) {
-      setStatusText('Access granted. Entering OS...');
       router.push('/');
     }
   }, [mounted, isAuthenticated, router]);
 
   const handleEmailAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
-    setErrorMsg('');
     
-    // FIREBASE REQUIREMENT: Passwords must be 6+ chars
     if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters long.');
+      alert("Password must be at least 6 characters!");
       return;
     }
 
     setLoading(true);
-    setStatusText(isRegistering ? 'Creating Sanctuary on Firebase...' : 'Verifying credentials...');
 
     try {
       if (isRegistering) {
@@ -71,28 +48,25 @@ export default function Login() {
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
-      setStatusText('Success! Redirecting...');
+      // If successful, the useEffect above will instantly push you to '/'
     } catch (error: any) {
-      // Print the exact reason it failed to the screen
-      setErrorMsg(`FAILED: ${error.code.replace('auth/', '')}`);
+      // HARDCORE MOBILE DEBUGGER: This forces a system popup on your phone
+      alert(`EMAIL FAILED:\nCode: ${error.code}\nMessage: ${error.message}`);
       setLoading(false);
-      setStatusText('');
-      if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate([50, 50]);
     }
   };
 
   const handleGoogleAuth = async () => {
     if (typeof window !== 'undefined' && navigator.vibrate) navigator.vibrate(20);
-    setErrorMsg('');
     setLoading(true);
-    setStatusText('Redirecting to Google...');
 
     try {
-      await signInWithRedirect(auth, googleProvider);
+      // Switched to Popup to prevent mobile browser memory wipes
+      await signInWithPopup(auth, googleProvider);
     } catch (error: any) {
-      setErrorMsg(`Google Failed: ${error.message}`);
+      // HARDCORE MOBILE DEBUGGER
+      alert(`GOOGLE FAILED:\nCode: ${error.code}\nMessage: ${error.message}`);
       setLoading(false);
-      setStatusText('');
     }
   };
 
@@ -111,19 +85,6 @@ export default function Login() {
             {isRegistering ? 'Initialize Sanctuary' : 'Access Protocol'}
           </p>
         </div>
-
-        {/* DIAGNOSTIC MESSAGES */}
-        {statusText && !errorMsg && (
-          <div className="bg-[#F5F5F5] text-[#384D48] text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-xl mb-4 text-center animate-pulse">
-            {statusText}
-          </div>
-        )}
-
-        {errorMsg && (
-          <div className="bg-red-50 text-red-600 text-[11px] font-bold px-4 py-3 rounded-xl mb-4 text-center border border-red-100">
-            {errorMsg}
-          </div>
-        )}
 
         <div className="space-y-4">
           <div>
@@ -158,7 +119,7 @@ export default function Login() {
 
           <div className="text-center mt-2">
             <button 
-              onClick={() => { setIsRegistering(!isRegistering); setErrorMsg(''); setStatusText(''); }}
+              onClick={() => { setIsRegistering(!isRegistering); }}
               className="text-[#6E7271] text-[11px] font-bold uppercase tracking-widest p-2 active:scale-95 transition-transform"
             >
               {isRegistering ? 'Already have access? Login' : 'Need a sanctuary? Create one'}
@@ -189,5 +150,4 @@ export default function Login() {
       </div>
     </div>
   );
-        }
-                
+}
