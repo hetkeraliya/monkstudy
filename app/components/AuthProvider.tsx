@@ -1,38 +1,31 @@
 "use client";
 
-import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { useStore } from "@/store/useStore";
+import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
-export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const setAuthUser = useStore((state) => state.setAuthUser);
-  const setAuthLoading = useStore((state) => state.setAuthLoading);
+const AuthContext = createContext<any>(null);
+
+export const AuthProvider = ({ children }: any) => {
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Failsafe: If Firebase takes longer than 3 seconds, force the loading screen to drop
-    const timeout = setTimeout(() => setAuthLoading(false), 3000);
-
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      clearTimeout(timeout); // Clear failsafe if Firebase responds normally
-      
-      if (firebaseUser) {
-        setAuthUser({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-        });
-      } else {
-        setAuthUser(null);
-      }
-      setAuthLoading(false); // Turn off the loading spinner
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
     });
 
-    return () => {
-      clearTimeout(timeout);
-      unsubscribe();
-    };
-  }, [setAuthUser, setAuthLoading]);
+    const { data: listener } =
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
 
-  return <>{children}</>;
-}
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);
