@@ -25,7 +25,7 @@
     "lucide-react": "^0.344.0",
     "next": "14.1.0",
     "react": "^18",
-"firebase": "latest",
+"firebase": "^10.12.2",
     "framer-motion": "^11.0.0",
     "lucide-react": "^0.344.0",
     "next": "14.1.0",
