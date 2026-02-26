@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'; // <-- Added this back
 import Link from 'next/link';
 import { useStore } from '@/store/useStore';
 import { User, Flame, Target, Play, BookOpen } from 'lucide-react';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+
 
 export default function Dashboard() {
   const router = useRouter(); // <-- Initialize router
