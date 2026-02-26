@@ -20,14 +20,6 @@ export default function Dashboard() {
   useEffect(() => {
     setMounted(true);
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!firebaseUser) {
-        // SMOOTH TRANSITION: Send back to login without browser wipe
-        router.replace('/login'); 
-      } else {
-        setFirebaseChecked(true); 
-      }
-    });
 
     return () => unsubscribe();
   }, [router]);
