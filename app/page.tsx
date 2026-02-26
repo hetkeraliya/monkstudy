@@ -19,9 +19,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     setMounted(true);
-
-
-    return () => unsubscribe();
   }, [router]);
 
   if (!mounted || !firebaseChecked) {
