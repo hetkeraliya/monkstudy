@@ -1,11 +1,7 @@
-"use client";
-
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { usePathname } from "next/navigation";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import AuthGuard from "./components/AuthGuard";
+import AppShell from "./components/AppShell";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,24 +24,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
-  const isAuthPage =
-    pathname === "/login" || pathname === "/register";
-
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-[#E2E2E2] pb-32 antialiased`}>
-        {isAuthPage ? (
-          // Auth pages: no navbar, no guard
-          children
-        ) : (
-          // Protected pages
-          <AuthGuard>
-            {children}
-            <Navbar />
-          </AuthGuard>
-        )}
+      <body className={`${inter.className} bg-[#E2E2E2] antialiased`}>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
