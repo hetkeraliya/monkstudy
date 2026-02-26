@@ -1,8 +1,6 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
 import { useStore } from '@/store/useStore';
 import { ArrowLeft, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
