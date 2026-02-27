@@ -10,7 +10,7 @@ export default function Dashboard() {
   const subjects = useStore((state) => state.subjects);
   const xp = useStore((state) => state.xp);
   const streak = useStore((state) => state.streak);
-  const addXP = useStore((state) => state.addXP);
+  const addXp = useStore((state) => state.addXp);
 
   // ----------------------
   // POMODORO STATE
@@ -34,7 +34,7 @@ export default function Dashboard() {
             }
 
             if (!isBreak) {
-              addXP(25); // reward XP
+              addXp(25); // reward XP
             }
 
             setIsBreak(!isBreak);
