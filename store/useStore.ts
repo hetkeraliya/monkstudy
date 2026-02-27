@@ -1,8 +1,6 @@
 import { create } from "zustand";
 
-/* ========================= */
-/* ========= TYPES ========= */
-/* ========================= */
+/* ================= TYPES ================= */
 
 export interface Mark {
   id: string;
@@ -32,8 +30,8 @@ export interface Subject {
 
 export interface ScheduleItem {
   id: string;
-  title: string;
-  time: string; // MUST match planner page
+  task: string;       // ✅ required by planner
+  time: string;       // ✅ required by planner
   type:
     | "JEE"
     | "Study"
@@ -45,9 +43,7 @@ export interface ScheduleItem {
   completed: boolean;
 }
 
-/* ========================= */
-/* ========= STATE ========= */
-/* ========================= */
+/* ================= STATE ================= */
 
 interface MonkState {
   user: any;
@@ -62,7 +58,7 @@ interface MonkState {
   /* XP */
   addXp: (amount: number) => void;
 
-  /* Subject */
+  /* Subjects */
   completeChapter: (id: string) => void;
   logStudyTime: (id: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
@@ -74,13 +70,12 @@ interface MonkState {
   /* Planner */
   setSchedule: (items: ScheduleItem[]) => void;
   addScheduleItem: (item: ScheduleItem) => void;
+  updateItem: (id: string, data: Partial<ScheduleItem>) => void; // ✅ required
   toggleScheduleItem: (id: string) => void;
   deleteScheduleItem: (id: string) => void;
 }
 
-/* ========================= */
-/* ========= STORE ========= */
-/* ========================= */
+/* ================= STORE ================= */
 
 export const useStore = create<MonkState>((set) => ({
   user: null,
@@ -127,6 +122,34 @@ export const useStore = create<MonkState>((set) => ({
   /* ================= PLANNER ================= */
 
   schedule: [],
+
+  setSchedule: (items) => set({ schedule: items }),
+
+  addScheduleItem: (item) =>
+    set((state) => ({
+      schedule: [...state.schedule, item],
+    })),
+
+  updateItem: (id, data) =>
+    set((state) => ({
+      schedule: state.schedule.map((item) =>
+        item.id === id ? { ...item, ...data } : item
+      ),
+    })),
+
+  toggleScheduleItem: (id) =>
+    set((state) => ({
+      schedule: state.schedule.map((item) =>
+        item.id === id
+          ? { ...item, completed: !item.completed }
+          : item
+      ),
+    })),
+
+  deleteScheduleItem: (id) =>
+    set((state) => ({
+      schedule: state.schedule.filter((item) => item.id !== id),
+    })),
 
   /* ================= XP SYSTEM ================= */
 
@@ -198,28 +221,5 @@ export const useStore = create<MonkState>((set) => ({
           ? { ...sub, exams: [...sub.exams, exam] }
           : sub
       ),
-    })),
-
-  /* ================= PLANNER LOGIC ================= */
-
-  setSchedule: (items) => set({ schedule: items }),
-
-  addScheduleItem: (item) =>
-    set((state) => ({
-      schedule: [...state.schedule, item],
-    })),
-
-  toggleScheduleItem: (id) =>
-    set((state) => ({
-      schedule: state.schedule.map((item) =>
-        item.id === id
-          ? { ...item, completed: !item.completed }
-          : item
-      ),
-    })),
-
-  deleteScheduleItem: (id) =>
-    set((state) => ({
-      schedule: state.schedule.filter((item) => item.id !== id),
     })),
 }));
