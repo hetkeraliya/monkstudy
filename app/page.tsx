@@ -3,18 +3,34 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
-import { User, Flame, Target, Play, Pause, RotateCcw, BookOpen } from "lucide-react";
+import {
+  User,
+  Flame,
+  Target,
+  Play,
+  Pause,
+  RotateCcw,
+  BookOpen,
+} from "lucide-react";
 
 export default function Dashboard() {
+  // -------------------------
+  // STORE STATE
+  // -------------------------
   const user = useStore((state) => state.user);
   const subjects = useStore((state) => state.subjects);
   const xp = useStore((state) => state.xp);
+  const level = useStore((state) => state.level);
   const streak = useStore((state) => state.streak);
   const addXp = useStore((state) => state.addXp);
+  const completeChapter = useStore((state) => state.completeChapter);
+  const logStudyTime = useStore((state) => state.logStudyTime);
 
-  // ----------------------
+  const xpProgress = xp % 100;
+
+  // -------------------------
   // POMODORO STATE
-  // ----------------------
+  // -------------------------
   const WORK_TIME = 25 * 60;
   const BREAK_TIME = 5 * 60;
 
@@ -29,12 +45,10 @@ export default function Dashboard() {
       interval = setInterval(() => {
         setSeconds((prev) => {
           if (prev <= 1) {
-            if (typeof window !== "undefined" && navigator.vibrate) {
-              navigator.vibrate([200, 100, 200]);
-            }
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
 
             if (!isBreak) {
-              addXp(25); // reward XP
+              addXp(25);
             }
 
             setIsBreak(!isBreak);
@@ -62,6 +76,9 @@ export default function Dashboard() {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - progress * circumference;
 
+  // -------------------------
+  // UI
+  // -------------------------
   return (
     <div className="min-h-screen bg-[#E2E2E2] pb-24 px-5 pt-6">
 
@@ -89,15 +106,31 @@ export default function Dashboard() {
         </span>
       </h2>
 
-      {/* STATS */}
-      <div className="flex gap-4 mb-10">
+      {/* STREAK + XP */}
+      <div className="flex gap-4 mb-8">
         <StatCard icon={<Flame size={18} />} label="Streak" value={`${streak} Days`} />
-        <StatCard icon={<Target size={18} />} label="Focus XP" value={xp} />
+        <StatCard icon={<Target size={18} />} label="XP" value={xp} />
       </div>
 
-      {/* ---------------------- */}
-      {/* BIG POMODORO SECTION */}
-      {/* ---------------------- */}
+      {/* LEVEL BAR */}
+      <div className="bg-white rounded-[20px] p-5 shadow mb-10">
+        <p className="text-xs font-bold text-[#6E7271] uppercase mb-1">
+          Level {level}
+        </p>
+
+        <div className="h-3 bg-[#F5F5F5] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#384D48] transition-all duration-500"
+            style={{ width: `${xpProgress}%` }}
+          />
+        </div>
+
+        <p className="text-xs mt-2 text-[#6E7271]">
+          {xpProgress}/100 XP to next level
+        </p>
+      </div>
+
+      {/* BIG POMODORO */}
       <div className="bg-white rounded-[26px] p-8 shadow mb-10 flex flex-col items-center">
 
         <div className="relative w-44 h-44 mb-6">
@@ -154,7 +187,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* SUBJECT CARDS */}
+      {/* SUBJECTS */}
       <h3 className="text-xs font-black text-[#6E7271] uppercase mb-4 flex items-center gap-2">
         <BookOpen size={14} /> Active Syllabus
       </h3>
@@ -164,6 +197,9 @@ export default function Dashboard() {
           const progressPercent = Math.round(
             (subject.completedChapters / subject.totalChapters) * 100
           );
+
+          const hours = Math.floor(subject.dailyStudyMinutes / 60);
+          const mins = subject.dailyStudyMinutes % 60;
 
           return (
             <div
@@ -180,23 +216,27 @@ export default function Dashboard() {
                 </span>
               </div>
 
-              <div className="h-2 bg-[#F5F5F5] rounded-full overflow-hidden mb-4">
+              <div className="h-2 bg-[#F5F5F5] rounded-full overflow-hidden mb-3">
                 <div
                   className="h-full bg-[#384D48] transition-all duration-500"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
 
+              <p className="text-xs text-[#6E7271] mb-3">
+                {hours}h {mins}m studied today
+              </p>
+
               <button
                 onClick={() => {
-                  if (typeof window !== "undefined" && navigator.vibrate) {
-                    navigator.vibrate(10);
-                  }
-                  alert(`Entering ${subject.name}`);
+                  logStudyTime(subject.id, 25);
+                  completeChapter(subject.id);
+                  addXp(15);
+                  if (navigator.vibrate) navigator.vibrate(15);
                 }}
                 className="bg-[#F5F5F5] px-4 py-2 rounded-[12px] text-xs font-black active:bg-[#E2E2E2] transition"
               >
-                Enter
+                Study +25m
               </button>
             </div>
           );
@@ -220,4 +260,4 @@ function StatCard({ icon, label, value }: any) {
       </div>
     </div>
   );
-            }
+      }
