@@ -30,8 +30,8 @@ export interface Subject {
 
 export interface ScheduleItem {
   id: string;
-  task: string;      // planner uses this
-  time: string;      // planner uses this
+  task: string;
+  time: string;
   type:
     | "JEE"
     | "Study"
@@ -40,6 +40,13 @@ export interface ScheduleItem {
     | "Personal"
     | "Revision"
     | "MockTest";
+  completed: boolean;
+}
+
+export interface TaskItem {
+  id: string;
+  title: string;
+  priority: "High" | "Mid" | "Low";
   completed: boolean;
 }
 
@@ -54,6 +61,7 @@ interface MonkState {
 
   subjects: Subject[];
   schedule: ScheduleItem[];
+  tasks: TaskItem[];
 
   /* XP */
   addXp: (amount: number) => void;
@@ -63,7 +71,7 @@ interface MonkState {
   logStudyTime: (id: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
-  /* Marks & Exams */
+  /* Marks + Exams */
   addMark: (subjectId: string, mark: Mark) => void;
   addExam: (subjectId: string, exam: Exam) => void;
 
@@ -73,6 +81,11 @@ interface MonkState {
   updateItem: (id: string, data: Partial<ScheduleItem>) => void;
   toggleScheduleItem: (id: string) => void;
   deleteScheduleItem: (id: string) => void;
+
+  /* Tasks */
+  addTask: (task: TaskItem) => void;
+  deleteTask: (id: string) => void;
+  toggleTask: (id: string) => void;
 }
 
 /* ================= STORE ================= */
@@ -84,7 +97,7 @@ export const useStore = create<MonkState>((set) => ({
   level: 1,
   streak: 1,
 
-  /* SUBJECTS */
+  /* ================= SUBJECTS ================= */
 
   subjects: [
     {
@@ -119,7 +132,7 @@ export const useStore = create<MonkState>((set) => ({
     },
   ],
 
-  /* PLANNER */
+  /* ================= PLANNER ================= */
 
   schedule: [],
 
@@ -151,7 +164,30 @@ export const useStore = create<MonkState>((set) => ({
       schedule: state.schedule.filter((item) => item.id !== id),
     })),
 
-  /* XP SYSTEM */
+  /* ================= TASKS ================= */
+
+  tasks: [],
+
+  addTask: (task) =>
+    set((state) => ({
+      tasks: [...state.tasks, task],
+    })),
+
+  deleteTask: (id) =>
+    set((state) => ({
+      tasks: state.tasks.filter((task) => task.id !== id),
+    })),
+
+  toggleTask: (id) =>
+    set((state) => ({
+      tasks: state.tasks.map((task) =>
+        task.id === id
+          ? { ...task, completed: !task.completed }
+          : task
+      ),
+    })),
+
+  /* ================= XP SYSTEM ================= */
 
   addXp: (amount) =>
     set((state) => {
@@ -164,7 +200,7 @@ export const useStore = create<MonkState>((set) => ({
       };
     }),
 
-  /* SUBJECT LOGIC */
+  /* ================= SUBJECT LOGIC ================= */
 
   completeChapter: (id) =>
     set((state) => ({
@@ -201,7 +237,7 @@ export const useStore = create<MonkState>((set) => ({
       ),
     })),
 
-  /* MARK SYSTEM */
+  /* ================= MARK SYSTEM ================= */
 
   addMark: (subjectId, mark) =>
     set((state) => ({
@@ -212,7 +248,7 @@ export const useStore = create<MonkState>((set) => ({
       ),
     })),
 
-  /* EXAM SYSTEM */
+  /* ================= EXAM SYSTEM ================= */
 
   addExam: (subjectId, exam) =>
     set((state) => ({
