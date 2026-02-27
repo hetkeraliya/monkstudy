@@ -1,25 +1,55 @@
-useEffect(() => {
-  const init = async () => {
-    const { data, error } = await supabase.auth.getSession();
+"use client";
 
-    console.log("SESSION DATA:", data);
-    console.log("SESSION ERROR:", error);
+import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
-    setUser(data.session?.user ?? null);
-    setLoading(false);
-  };
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+}
 
-  init();
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+});
 
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange((_event, session) => {
-    console.log("AUTH CHANGE:", session);
-    setUser(session?.user ?? null);
-    setLoading(false);
-  });
+export const AuthProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  return () => {
-    subscription.unsubscribe();
-  };
-}, []);
+  useEffect(() => {
+    const init = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    };
+
+    init();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
