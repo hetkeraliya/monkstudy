@@ -40,7 +40,7 @@ export interface ScheduleItem {
 }
 
 /* ========================= */
-/* ======== STATE ========== */
+/* ========= STATE ========= */
 /* ========================= */
 
 interface MonkState {
@@ -56,7 +56,7 @@ interface MonkState {
   /* XP */
   addXp: (amount: number) => void;
 
-  /* Subject */
+  /* Subjects */
   completeChapter: (id: string) => void;
   logStudyTime: (id: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
@@ -66,6 +66,7 @@ interface MonkState {
   addExam: (subjectId: string, exam: Exam) => void;
 
   /* Planner */
+  setSchedule: (items: ScheduleItem[]) => void;
   addScheduleItem: (item: ScheduleItem) => void;
   toggleScheduleItem: (id: string) => void;
   deleteScheduleItem: (id: string) => void;
@@ -194,6 +195,8 @@ export const useStore = create<MonkState>((set) => ({
     })),
 
   /* ================= PLANNER LOGIC ================= */
+
+  setSchedule: (items) => set({ schedule: items }),
 
   addScheduleItem: (item) =>
     set((state) => ({
