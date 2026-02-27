@@ -30,8 +30,8 @@ export interface Subject {
 
 export interface ScheduleItem {
   id: string;
-  task: string;       // ✅ required by planner
-  time: string;       // ✅ required by planner
+  task: string;      // planner uses this
+  time: string;      // planner uses this
   type:
     | "JEE"
     | "Study"
@@ -63,14 +63,14 @@ interface MonkState {
   logStudyTime: (id: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
-  /* Marks + Exams */
+  /* Marks & Exams */
   addMark: (subjectId: string, mark: Mark) => void;
   addExam: (subjectId: string, exam: Exam) => void;
 
   /* Planner */
   setSchedule: (items: ScheduleItem[]) => void;
   addScheduleItem: (item: ScheduleItem) => void;
-  updateItem: (id: string, data: Partial<ScheduleItem>) => void; // ✅ required
+  updateItem: (id: string, data: Partial<ScheduleItem>) => void;
   toggleScheduleItem: (id: string) => void;
   deleteScheduleItem: (id: string) => void;
 }
@@ -84,7 +84,7 @@ export const useStore = create<MonkState>((set) => ({
   level: 1,
   streak: 1,
 
-  /* ================= SUBJECTS ================= */
+  /* SUBJECTS */
 
   subjects: [
     {
@@ -119,7 +119,7 @@ export const useStore = create<MonkState>((set) => ({
     },
   ],
 
-  /* ================= PLANNER ================= */
+  /* PLANNER */
 
   schedule: [],
 
@@ -151,7 +151,7 @@ export const useStore = create<MonkState>((set) => ({
       schedule: state.schedule.filter((item) => item.id !== id),
     })),
 
-  /* ================= XP SYSTEM ================= */
+  /* XP SYSTEM */
 
   addXp: (amount) =>
     set((state) => {
@@ -164,7 +164,7 @@ export const useStore = create<MonkState>((set) => ({
       };
     }),
 
-  /* ================= SUBJECT LOGIC ================= */
+  /* SUBJECT LOGIC */
 
   completeChapter: (id) =>
     set((state) => ({
@@ -201,7 +201,7 @@ export const useStore = create<MonkState>((set) => ({
       ),
     })),
 
-  /* ================= MARK SYSTEM ================= */
+  /* MARK SYSTEM */
 
   addMark: (subjectId, mark) =>
     set((state) => ({
@@ -212,7 +212,7 @@ export const useStore = create<MonkState>((set) => ({
       ),
     })),
 
-  /* ================= EXAM SYSTEM ================= */
+  /* EXAM SYSTEM */
 
   addExam: (subjectId, exam) =>
     set((state) => ({
