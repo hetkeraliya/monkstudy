@@ -21,7 +21,7 @@ export default function AuthGuard({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#E2E2E2]">
-        <div className="text-[#6E7271] text-sm">Loading...</div>
+        <div className="animate-spin h-6 w-6 border-2 border-[#384D48] border-t-transparent rounded-full" />
       </div>
     );
   }
