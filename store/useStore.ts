@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
-/* ================= TYPES ================= */
+/* ========================= */
+/* ========= TYPES ========= */
+/* ========================= */
 
 export interface Mark {
   id: string;
@@ -8,13 +10,15 @@ export interface Mark {
   total: number;
   date: string;
 }
+
 export interface Exam {
   id: string;
-  title: string; // ✅ matches analysis page
+  title: string;
   date: string;
-  type: "High" | "Medium" | "Low"; // ✅ matches analysis page
+  type: "High" | "Medium" | "Low";
   marks: Mark[];
 }
+
 export interface Subject {
   id: string;
   name: string;
@@ -23,10 +27,21 @@ export interface Subject {
   dailyStudyMinutes: number;
   currentChapter: string;
   marks: Mark[];
-  exams: Exam[]; // ✅ FIX ADDED
+  exams: Exam[];
 }
 
-/* ================= STATE ================= */
+export interface ScheduleItem {
+  id: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  type: "Study" | "Break" | "Workout" | "Personal";
+  completed: boolean;
+}
+
+/* ========================= */
+/* ======== STATE ========== */
+/* ========================= */
 
 interface MonkState {
   user: any;
@@ -36,17 +51,29 @@ interface MonkState {
   streak: number;
 
   subjects: Subject[];
+  schedule: ScheduleItem[];
 
+  /* XP */
   addXp: (amount: number) => void;
+
+  /* Subject */
   completeChapter: (id: string) => void;
   logStudyTime: (id: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
+  /* Marks + Exams */
   addMark: (subjectId: string, mark: Mark) => void;
   addExam: (subjectId: string, exam: Exam) => void;
+
+  /* Planner */
+  addScheduleItem: (item: ScheduleItem) => void;
+  toggleScheduleItem: (id: string) => void;
+  deleteScheduleItem: (id: string) => void;
 }
 
-/* ================= STORE ================= */
+/* ========================= */
+/* ========= STORE ========= */
+/* ========================= */
 
 export const useStore = create<MonkState>((set) => ({
   user: null,
@@ -54,6 +81,8 @@ export const useStore = create<MonkState>((set) => ({
   xp: 0,
   level: 1,
   streak: 1,
+
+  /* ================= SUBJECTS ================= */
 
   subjects: [
     {
@@ -64,7 +93,7 @@ export const useStore = create<MonkState>((set) => ({
       dailyStudyMinutes: 0,
       currentChapter: "Rotational Motion",
       marks: [],
-      exams: [], // ✅ FIX
+      exams: [],
     },
     {
       id: "chemistry",
@@ -74,7 +103,7 @@ export const useStore = create<MonkState>((set) => ({
       dailyStudyMinutes: 0,
       currentChapter: "Chemical Bonding",
       marks: [],
-      exams: [], // ✅ FIX
+      exams: [],
     },
     {
       id: "maths",
@@ -84,9 +113,13 @@ export const useStore = create<MonkState>((set) => ({
       dailyStudyMinutes: 0,
       currentChapter: "Definite Integration",
       marks: [],
-      exams: [], // ✅ FIX
+      exams: [],
     },
   ],
+
+  /* ================= PLANNER ================= */
+
+  schedule: [],
 
   /* ================= XP SYSTEM ================= */
 
@@ -101,7 +134,7 @@ export const useStore = create<MonkState>((set) => ({
       };
     }),
 
-  /* ================= SUBJECT SYSTEM ================= */
+  /* ================= SUBJECT LOGIC ================= */
 
   completeChapter: (id) =>
     set((state) => ({
@@ -158,5 +191,26 @@ export const useStore = create<MonkState>((set) => ({
           ? { ...sub, exams: [...sub.exams, exam] }
           : sub
       ),
+    })),
+
+  /* ================= PLANNER LOGIC ================= */
+
+  addScheduleItem: (item) =>
+    set((state) => ({
+      schedule: [...state.schedule, item],
+    })),
+
+  toggleScheduleItem: (id) =>
+    set((state) => ({
+      schedule: state.schedule.map((item) =>
+        item.id === id
+          ? { ...item, completed: !item.completed }
+          : item
+      ),
+    })),
+
+  deleteScheduleItem: (id) =>
+    set((state) => ({
+      schedule: state.schedule.filter((item) => item.id !== id),
     })),
 }));
