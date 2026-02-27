@@ -46,7 +46,7 @@ export default function Dashboard() {
     }
 
     return () => clearInterval(interval);
-  }, [isRunning, isBreak, addXP]);
+  }, [isRunning, isBreak, addXp]);
 
   const formatTime = () => {
     const mins = Math.floor(seconds / 60);
