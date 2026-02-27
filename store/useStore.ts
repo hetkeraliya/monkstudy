@@ -8,14 +8,13 @@ export interface Mark {
   total: number;
   date: string;
 }
-
 export interface Exam {
   id: string;
-  name: string;
+  title: string; // ✅ matches analysis page
   date: string;
+  type: "High" | "Medium" | "Low"; // ✅ matches analysis page
   marks: Mark[];
 }
-
 export interface Subject {
   id: string;
   name: string;
