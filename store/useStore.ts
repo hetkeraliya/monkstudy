@@ -35,7 +35,14 @@ export interface ScheduleItem {
   title: string;
   startTime: string;
   endTime: string;
-  type: "Study" | "Break" | "Workout" | "Personal";
+  type:
+    | "JEE"
+    | "Study"
+    | "Break"
+    | "Workout"
+    | "Personal"
+    | "Revision"
+    | "MockTest";
   completed: boolean;
 }
 
@@ -56,7 +63,7 @@ interface MonkState {
   /* XP */
   addXp: (amount: number) => void;
 
-  /* Subjects */
+  /* Subject */
   completeChapter: (id: string) => void;
   logStudyTime: (id: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
