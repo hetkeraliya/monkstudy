@@ -33,7 +33,7 @@ export interface Subject {
 export interface ScheduleItem {
   id: string;
   title: string;
-  time: string; // ✅ FIXED
+  time: string; // MUST match planner page
   type:
     | "JEE"
     | "Study"
@@ -44,6 +44,7 @@ export interface ScheduleItem {
     | "MockTest";
   completed: boolean;
 }
+
 /* ========================= */
 /* ========= STATE ========= */
 /* ========================= */
