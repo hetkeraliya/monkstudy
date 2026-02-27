@@ -1,22 +1,12 @@
 import { create } from "zustand";
 
-/* ============================= */
-/* ========= TYPES ============= */
-/* ============================= */
+/* ================= TYPES ================= */
 
 export interface Mark {
   id: string;
-  subject: string;
   score: number;
   total: number;
   date: string;
-}
-
-export interface Exam {
-  id: string;
-  name: string;
-  date: string;
-  marks: Mark[];
 }
 
 export interface Subject {
@@ -26,11 +16,17 @@ export interface Subject {
   totalChapters: number;
   dailyStudyMinutes: number;
   currentChapter: string;
+  marks: Mark[]; // ✅ FIX ADDED
 }
 
-/* ============================= */
-/* ========= STATE ============= */
-/* ============================= */
+export interface Exam {
+  id: string;
+  name: string;
+  date: string;
+  marks: Mark[];
+}
+
+/* ================= STATE ================= */
 
 interface MonkState {
   user: any;
@@ -47,13 +43,10 @@ interface MonkState {
   logStudyTime: (id: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
-  addExam: (exam: Exam) => void;
-  addMarkToExam: (examId: string, mark: Mark) => void;
+  addMark: (subjectId: string, mark: Mark) => void;
 }
 
-/* ============================= */
-/* ========= STORE ============= */
-/* ============================= */
+/* ================= STORE ================= */
 
 export const useStore = create<MonkState>((set) => ({
   user: null,
@@ -70,6 +63,7 @@ export const useStore = create<MonkState>((set) => ({
       totalChapters: 20,
       dailyStudyMinutes: 0,
       currentChapter: "Rotational Motion",
+      marks: [], // ✅ FIX
     },
     {
       id: "chemistry",
@@ -78,6 +72,7 @@ export const useStore = create<MonkState>((set) => ({
       totalChapters: 18,
       dailyStudyMinutes: 0,
       currentChapter: "Chemical Bonding",
+      marks: [], // ✅ FIX
     },
     {
       id: "maths",
@@ -86,6 +81,7 @@ export const useStore = create<MonkState>((set) => ({
       totalChapters: 22,
       dailyStudyMinutes: 0,
       currentChapter: "Definite Integration",
+      marks: [], // ✅ FIX
     },
   ],
 
@@ -104,7 +100,7 @@ export const useStore = create<MonkState>((set) => ({
       };
     }),
 
-  /* =============== SUBJECT SYSTEM ============== */
+  /* ================= SUBJECT SYSTEM ================= */
 
   completeChapter: (id) =>
     set((state) => ({
@@ -141,19 +137,14 @@ export const useStore = create<MonkState>((set) => ({
       ),
     })),
 
-  /* ================= EXAM SYSTEM ================= */
+  /* ================= MARK SYSTEM ================= */
 
-  addExam: (exam) =>
+  addMark: (subjectId, mark) =>
     set((state) => ({
-      exams: [...state.exams, exam],
-    })),
-
-  addMarkToExam: (examId, mark) =>
-    set((state) => ({
-      exams: state.exams.map((exam) =>
-        exam.id === examId
-          ? { ...exam, marks: [...exam.marks, mark] }
-          : exam
+      subjects: state.subjects.map((sub) =>
+        sub.id === subjectId
+          ? { ...sub, marks: [...sub.marks, mark] }
+          : sub
       ),
     })),
 }));
