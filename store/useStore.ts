@@ -33,8 +33,7 @@ export interface Subject {
 export interface ScheduleItem {
   id: string;
   title: string;
-  startTime: string;
-  endTime: string;
+  time: string; // ✅ FIXED
   type:
     | "JEE"
     | "Study"
@@ -45,7 +44,6 @@ export interface ScheduleItem {
     | "MockTest";
   completed: boolean;
 }
-
 /* ========================= */
 /* ========= STATE ========= */
 /* ========================= */
