@@ -28,7 +28,7 @@ interface MonkState {
   level: number;
   streak: number;
   subjects: Subject[];
-
+updateSubject: (id: string, data: Partial<Subject>) => void;
   addXp: (amount: number) => void;
   completeChapter: (id: string) => void;
   logStudyTime: (id: string, minutes: number) => void;
@@ -36,7 +36,12 @@ interface MonkState {
 
 export const useStore = create<MonkState>((set) => ({
   user: null,
-
+updateSubject: (id, data) =>
+  set((state) => ({
+    subjects: state.subjects.map((sub) =>
+      sub.id === id ? { ...sub, ...data } : sub
+    ),
+  })),
   xp: 0,
   level: 1,
   streak: 1,
