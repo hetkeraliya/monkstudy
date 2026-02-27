@@ -9,6 +9,13 @@ export interface Mark {
   date: string;
 }
 
+export interface Exam {
+  id: string;
+  name: string;
+  date: string;
+  marks: Mark[];
+}
+
 export interface Subject {
   id: string;
   name: string;
@@ -16,14 +23,8 @@ export interface Subject {
   totalChapters: number;
   dailyStudyMinutes: number;
   currentChapter: string;
-  marks: Mark[]; // ✅ FIX ADDED
-}
-
-export interface Exam {
-  id: string;
-  name: string;
-  date: string;
   marks: Mark[];
+  exams: Exam[]; // ✅ FIX ADDED
 }
 
 /* ================= STATE ================= */
@@ -36,7 +37,6 @@ interface MonkState {
   streak: number;
 
   subjects: Subject[];
-  exams: Exam[];
 
   addXp: (amount: number) => void;
   completeChapter: (id: string) => void;
@@ -44,6 +44,7 @@ interface MonkState {
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
   addMark: (subjectId: string, mark: Mark) => void;
+  addExam: (subjectId: string, exam: Exam) => void;
 }
 
 /* ================= STORE ================= */
@@ -63,7 +64,8 @@ export const useStore = create<MonkState>((set) => ({
       totalChapters: 20,
       dailyStudyMinutes: 0,
       currentChapter: "Rotational Motion",
-      marks: [], // ✅ FIX
+      marks: [],
+      exams: [], // ✅ FIX
     },
     {
       id: "chemistry",
@@ -72,7 +74,8 @@ export const useStore = create<MonkState>((set) => ({
       totalChapters: 18,
       dailyStudyMinutes: 0,
       currentChapter: "Chemical Bonding",
-      marks: [], // ✅ FIX
+      marks: [],
+      exams: [], // ✅ FIX
     },
     {
       id: "maths",
@@ -81,11 +84,10 @@ export const useStore = create<MonkState>((set) => ({
       totalChapters: 22,
       dailyStudyMinutes: 0,
       currentChapter: "Definite Integration",
-      marks: [], // ✅ FIX
+      marks: [],
+      exams: [], // ✅ FIX
     },
   ],
-
-  exams: [],
 
   /* ================= XP SYSTEM ================= */
 
@@ -144,6 +146,17 @@ export const useStore = create<MonkState>((set) => ({
       subjects: state.subjects.map((sub) =>
         sub.id === subjectId
           ? { ...sub, marks: [...sub.marks, mark] }
+          : sub
+      ),
+    })),
+
+  /* ================= EXAM SYSTEM ================= */
+
+  addExam: (subjectId, exam) =>
+    set((state) => ({
+      subjects: state.subjects.map((sub) =>
+        sub.id === subjectId
+          ? { ...sub, exams: [...sub.exams, exam] }
           : sub
       ),
     })),
