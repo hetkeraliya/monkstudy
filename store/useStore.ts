@@ -8,7 +8,20 @@ interface Subject {
   dailyStudyMinutes: number;
   currentChapter: string;
 }
+export interface Mark {
+  id: string;
+  subject: string;
+  score: number;
+  total: number;
+  date: string;
+}
 
+export interface Exam {
+  id: string;
+  name: string;
+  date: string;
+  marks: Mark[];
+}
 interface MonkState {
   user: any;
   xp: number;
