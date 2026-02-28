@@ -43,12 +43,13 @@ interface MonkState {
   /* XP */
   addXp: (amount: number) => void;
 
-  /* Chapters */
+  /* Subject logic */
   addChapter: (subjectId: string, title: string) => void;
   toggleChapter: (subjectId: string, chapterId: string) => void;
   logStudyTime: (subjectId: string, minutes: number) => void;
+  updateSubject: (id: string, data: Partial<Subject>) => void;
 
-  /* Marks & Exams */
+  /* Marks + Exams */
   addMark: (subjectId: string, mark: Mark) => void;
   addExam: (subjectId: string, exam: Exam) => void;
 
@@ -91,7 +92,7 @@ export const useStore = create<MonkState>()(
         },
       ],
 
-      /* ================= XP SYSTEM ================= */
+      /* ================= XP ================= */
 
       addXp: (amount) => {
         const newXp = get().xp + amount;
@@ -103,7 +104,7 @@ export const useStore = create<MonkState>()(
         });
       },
 
-      /* ================= CHAPTER LOGIC ================= */
+      /* ================= SUBJECT ================= */
 
       addChapter: (subjectId, title) =>
         set((state) => ({
@@ -156,16 +157,20 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
+      updateSubject: (id, data) =>
+        set((state) => ({
+          subjects: state.subjects.map((sub) =>
+            sub.id === id ? { ...sub, ...data } : sub
+          ),
+        })),
+
       /* ================= MARK SYSTEM ================= */
 
       addMark: (subjectId, mark) =>
         set((state) => ({
           subjects: state.subjects.map((sub) =>
             sub.id === subjectId
-              ? {
-                  ...sub,
-                  marks: [...sub.marks, mark],
-                }
+              ? { ...sub, marks: [...sub.marks, mark] }
               : sub
           ),
         })),
@@ -176,10 +181,7 @@ export const useStore = create<MonkState>()(
         set((state) => ({
           subjects: state.subjects.map((sub) =>
             sub.id === subjectId
-              ? {
-                  ...sub,
-                  exams: [...sub.exams, exam],
-                }
+              ? { ...sub, exams: [...sub.exams, exam] }
               : sub
           ),
         })),
