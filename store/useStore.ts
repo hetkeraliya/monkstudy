@@ -26,7 +26,7 @@ export interface Chapter {
 
 export interface ScheduleItem {
   id: string;
-  title: string;
+  task: string; // ✅ matches planner
   time: string;
   type:
     | "JEE"
@@ -74,6 +74,7 @@ interface MonkState {
   /* Planner */
   setSchedule: (items: ScheduleItem[]) => void;
   addScheduleItem: (item: ScheduleItem) => void;
+  updateItem: (id: string, data: Partial<ScheduleItem>) => void; // ✅ needed
   toggleScheduleItem: (id: string) => void;
   deleteScheduleItem: (id: string) => void;
 
@@ -217,6 +218,13 @@ export const useStore = create<MonkState>()(
       addScheduleItem: (item) =>
         set((state) => ({
           schedule: [...state.schedule, item],
+        })),
+
+      updateItem: (id, data) =>
+        set((state) => ({
+          schedule: state.schedule.map((item) =>
+            item.id === id ? { ...item, ...data } : item
+          ),
         })),
 
       toggleScheduleItem: (id) =>
