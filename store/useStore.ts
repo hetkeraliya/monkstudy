@@ -45,7 +45,7 @@ export interface ScheduleItem {
 
 export interface TaskItem {
   id: string;
-  title: string;
+  text: string; // ✅ must match tasks page
   priority: "High" | "Mid" | "Low";
   completed: boolean;
 }
@@ -83,7 +83,7 @@ interface MonkState {
   deleteScheduleItem: (id: string) => void;
 
   /* Tasks */
-  addTask: (title: string, priority: "High" | "Mid" | "Low") => void;
+  addTask: (text: string, priority: "High" | "Mid" | "Low") => void;
   deleteTask: (id: string) => void;
   toggleTask: (id: string) => void;
 }
@@ -97,7 +97,7 @@ export const useStore = create<MonkState>((set) => ({
   level: 1,
   streak: 1,
 
-  /* ================= SUBJECTS ================= */
+  /* SUBJECTS */
 
   subjects: [
     {
@@ -132,7 +132,7 @@ export const useStore = create<MonkState>((set) => ({
     },
   ],
 
-  /* ================= PLANNER ================= */
+  /* PLANNER */
 
   schedule: [],
 
@@ -164,17 +164,17 @@ export const useStore = create<MonkState>((set) => ({
       schedule: state.schedule.filter((item) => item.id !== id),
     })),
 
-  /* ================= TASKS ================= */
+  /* TASKS */
 
   tasks: [],
 
-  addTask: (title, priority) =>
+  addTask: (text, priority) =>
     set((state) => ({
       tasks: [
         ...state.tasks,
         {
           id: crypto.randomUUID(),
-          title,
+          text,
           priority,
           completed: false,
         },
@@ -195,7 +195,7 @@ export const useStore = create<MonkState>((set) => ({
       ),
     })),
 
-  /* ================= XP SYSTEM ================= */
+  /* XP SYSTEM */
 
   addXp: (amount) =>
     set((state) => {
@@ -208,7 +208,7 @@ export const useStore = create<MonkState>((set) => ({
       };
     }),
 
-  /* ================= SUBJECT LOGIC ================= */
+  /* SUBJECT LOGIC */
 
   completeChapter: (id) =>
     set((state) => ({
@@ -245,7 +245,7 @@ export const useStore = create<MonkState>((set) => ({
       ),
     })),
 
-  /* ================= MARK SYSTEM ================= */
+  /* MARK SYSTEM */
 
   addMark: (subjectId, mark) =>
     set((state) => ({
@@ -256,7 +256,7 @@ export const useStore = create<MonkState>((set) => ({
       ),
     })),
 
-  /* ================= EXAM SYSTEM ================= */
+  /* EXAM SYSTEM */
 
   addExam: (subjectId, exam) =>
     set((state) => ({
