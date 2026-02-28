@@ -83,7 +83,7 @@ interface MonkState {
   deleteScheduleItem: (id: string) => void;
 
   /* Tasks */
-  addTask: (task: TaskItem) => void;
+  addTask: (title: string, priority: "High" | "Mid" | "Low") => void;
   deleteTask: (id: string) => void;
   toggleTask: (id: string) => void;
 }
@@ -168,9 +168,17 @@ export const useStore = create<MonkState>((set) => ({
 
   tasks: [],
 
-  addTask: (task) =>
+  addTask: (title, priority) =>
     set((state) => ({
-      tasks: [...state.tasks, task],
+      tasks: [
+        ...state.tasks,
+        {
+          id: crypto.randomUUID(),
+          title,
+          priority,
+          completed: false,
+        },
+      ],
     })),
 
   deleteTask: (id) =>
