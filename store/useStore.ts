@@ -3,6 +3,21 @@ import { persist } from "zustand/middleware";
 
 /* ================= TYPES ================= */
 
+export interface Mark {
+  id: string;
+  score: number;
+  total: number;
+  date: string;
+}
+
+export interface Exam {
+  id: string;
+  title: string;
+  date: string;
+  type: "High" | "Medium" | "Low";
+  marks: Mark[];
+}
+
 export interface Chapter {
   id: string;
   title: string;
@@ -14,6 +29,8 @@ export interface Subject {
   name: string;
   chapters: Chapter[];
   dailyStudyMinutes: number;
+  marks: Mark[];
+  exams: Exam[];
 }
 
 interface MonkState {
@@ -26,12 +43,15 @@ interface MonkState {
   /* XP */
   addXp: (amount: number) => void;
 
-  /* Subject Logic */
+  /* Chapters */
   addChapter: (subjectId: string, title: string) => void;
   toggleChapter: (subjectId: string, chapterId: string) => void;
   logStudyTime: (subjectId: string, minutes: number) => void;
 
-  /* Reset */
+  /* Marks & Exams */
+  addMark: (subjectId: string, mark: Mark) => void;
+  addExam: (subjectId: string, exam: Exam) => void;
+
   resetAll: () => void;
 }
 
@@ -50,18 +70,24 @@ export const useStore = create<MonkState>()(
           name: "Physics",
           chapters: [],
           dailyStudyMinutes: 0,
+          marks: [],
+          exams: [],
         },
         {
           id: "chemistry",
           name: "Chemistry",
           chapters: [],
           dailyStudyMinutes: 0,
+          marks: [],
+          exams: [],
         },
         {
           id: "maths",
           name: "Maths",
           chapters: [],
           dailyStudyMinutes: 0,
+          marks: [],
+          exams: [],
         },
       ],
 
@@ -77,7 +103,7 @@ export const useStore = create<MonkState>()(
         });
       },
 
-      /* ================= SUBJECT LOGIC ================= */
+      /* ================= CHAPTER LOGIC ================= */
 
       addChapter: (subjectId, title) =>
         set((state) => ({
@@ -106,7 +132,6 @@ export const useStore = create<MonkState>()(
                   ...sub,
                   chapters: sub.chapters.map((ch) => {
                     if (ch.id === chapterId) {
-                      // Reward XP only when marking complete
                       if (!ch.completed) {
                         get().addXp(20);
                       }
@@ -131,15 +156,66 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
+      /* ================= MARK SYSTEM ================= */
+
+      addMark: (subjectId, mark) =>
+        set((state) => ({
+          subjects: state.subjects.map((sub) =>
+            sub.id === subjectId
+              ? {
+                  ...sub,
+                  marks: [...sub.marks, mark],
+                }
+              : sub
+          ),
+        })),
+
+      /* ================= EXAM SYSTEM ================= */
+
+      addExam: (subjectId, exam) =>
+        set((state) => ({
+          subjects: state.subjects.map((sub) =>
+            sub.id === subjectId
+              ? {
+                  ...sub,
+                  exams: [...sub.exams, exam],
+                }
+              : sub
+          ),
+        })),
+
+      /* ================= RESET ================= */
+
       resetAll: () =>
         set({
           xp: 0,
           level: 1,
           streak: 1,
           subjects: [
-            { id: "physics", name: "Physics", chapters: [], dailyStudyMinutes: 0 },
-            { id: "chemistry", name: "Chemistry", chapters: [], dailyStudyMinutes: 0 },
-            { id: "maths", name: "Maths", chapters: [], dailyStudyMinutes: 0 },
+            {
+              id: "physics",
+              name: "Physics",
+              chapters: [],
+              dailyStudyMinutes: 0,
+              marks: [],
+              exams: [],
+            },
+            {
+              id: "chemistry",
+              name: "Chemistry",
+              chapters: [],
+              dailyStudyMinutes: 0,
+              marks: [],
+              exams: [],
+            },
+            {
+              id: "maths",
+              name: "Maths",
+              chapters: [],
+              dailyStudyMinutes: 0,
+              marks: [],
+              exams: [],
+            },
           ],
         }),
     }),
