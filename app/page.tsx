@@ -1,27 +1,99 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
-import { Plus } from "lucide-react";
+import { User, Play, Pause, Plus } from "lucide-react";
 
 export default function Dashboard() {
+  const router = useRouter();
   const {
     subjects,
-    addChapter,
     toggleChapter,
+    addChapter,
     logStudyTime,
+    addXp,
   } = useStore();
 
-  return (
-    <div className="min-h-screen bg-[#E2E2E2] px-5 pt-6 pb-28">
+  /* ================= POMODORO ================= */
 
-      {/* SUBJECT CARDS */}
-      <div className="space-y-6">
+  const [seconds, setSeconds] = useState(1500);
+  const [running, setRunning] = useState(false);
+
+  useEffect(() => {
+    if (!running) return;
+
+    const interval = setInterval(() => {
+      setSeconds((prev) => {
+        if (prev <= 1) {
+          setRunning(false);
+          addXp(30);
+          return 1500;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [running, addXp]);
+
+  const formatTime = () => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-[#E2E2E2] px-5 pt-6 pb-32">
+
+      {/* ================= TOP LINE ================= */}
+
+      <header className="flex justify-between items-center mb-8">
+        <button
+          onClick={() => router.push("/profile")}
+          className="w-12 h-12 bg-white rounded-[18px] shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center justify-center active:scale-95 transition"
+        >
+          <User className="text-[#384D48]" size={22} />
+        </button>
+
+        <h1 className="text-[#384D48] font-black tracking-[0.2em] text-[11px] uppercase">
+          Monk OS
+        </h1>
+
+        <div className="w-12 h-12" />
+      </header>
+
+      {/* ================= POMODORO ================= */}
+
+      <div className="bg-[#384D48] text-white rounded-[28px] p-7 shadow-[0_8px_20px_rgba(0,0,0,0.08)] mb-10">
+
+        <div className="text-center mb-6">
+          <p className="text-sm font-bold text-[#ACAD94] uppercase tracking-widest">
+            Deep Focus
+          </p>
+          <h2 className="text-5xl font-black mt-2 tracking-wide">
+            {formatTime()}
+          </h2>
+        </div>
+
+        <button
+          onClick={() => setRunning(!running)}
+          className="w-full bg-white text-[#384D48] py-4 rounded-[20px] font-black flex items-center justify-center gap-2 active:scale-95 transition"
+        >
+          {running ? <Pause size={18} /> : <Play size={18} />}
+          {running ? "Pause Focus" : "Start Focus"}
+        </button>
+
+      </div>
+
+      {/* ================= SUBJECT CARDS ================= */}
+
+      <div className="space-y-8">
 
         {subjects.map((subject) => {
           const total = subject.chapters.length;
-          const completed = subject.chapters.filter(c => c.completed).length;
-          const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+          const done = subject.chapters.filter(c => c.completed).length;
+          const percent = total === 0 ? 0 : Math.round((done / total) * 100);
 
           const hours = Math.floor(subject.dailyStudyMinutes / 60);
           const mins = subject.dailyStudyMinutes % 60;
@@ -29,35 +101,35 @@ export default function Dashboard() {
           return (
             <div
               key={subject.id}
-              className="bg-white rounded-[28px] p-6 shadow-[0_8px_20px_rgba(0,0,0,0.04)]"
+              className="bg-white rounded-[30px] p-7 shadow-[0_6px_18px_rgba(0,0,0,0.04)]"
             >
 
-              {/* TITLE */}
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xl font-black text-[#384D48]">
-                  {subject.name}
-                </h3>
-
-                <div className="text-right">
-                  <p className="text-sm font-bold text-[#ACAD94]">
-                    {percent}%
-                  </p>
-                  <p className="text-[10px] text-[#6E7271] font-bold">
+              {/* HEADER */}
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-2xl font-black text-[#384D48]">
+                    {subject.name}
+                  </h3>
+                  <p className="text-sm text-[#6E7271] font-bold mt-1">
                     {hours}h {mins}m today
                   </p>
                 </div>
+
+                <span className="text-lg font-black text-[#ACAD94]">
+                  {percent}%
+                </span>
               </div>
 
-              {/* PROGRESS BAR */}
-              <div className="h-2 bg-[#F1F1F1] rounded-full mb-5 overflow-hidden">
+              {/* PROGRESS */}
+              <div className="h-2 bg-[#F2F2F2] rounded-full mb-6 overflow-hidden">
                 <div
                   className="h-full bg-[#384D48] transition-all duration-500"
                   style={{ width: `${percent}%` }}
                 />
               </div>
 
-              {/* CHAPTER LIST */}
-              <div className="space-y-3 mb-5">
+              {/* CHAPTERS */}
+              <div className="space-y-4 mb-6">
                 {subject.chapters.map((chapter) => (
                   <div
                     key={chapter.id}
@@ -85,8 +157,8 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              {/* ADD CHAPTER + STUDY TIME */}
-              <AddSection
+              {/* ADD ROWS */}
+              <AddRow
                 subjectId={subject.id}
                 addChapter={addChapter}
                 logStudyTime={logStudyTime}
@@ -97,48 +169,47 @@ export default function Dashboard() {
         })}
 
       </div>
+
     </div>
   );
 }
 
-/* ================= ADD SECTION ================= */
+/* ================= ADD ROW ================= */
 
-function AddSection({ subjectId, addChapter, logStudyTime }: any) {
-  const [input, setInput] = useState("");
+function AddRow({ subjectId, addChapter, logStudyTime }: any) {
+  const [chapter, setChapter] = useState("");
   const [minutes, setMinutes] = useState("");
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
 
-      {/* ADD CHAPTER ROW */}
-      <div className="flex items-center gap-3">
+      <div className="flex gap-3 items-center">
         <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          value={chapter}
+          onChange={(e) => setChapter(e.target.value)}
           placeholder="Add chapter..."
-          className="flex-1 bg-[#F1F1F1] rounded-[18px] px-4 py-3 text-[#384D48] outline-none"
+          className="flex-1 bg-[#F2F2F2] rounded-[20px] px-5 py-4 outline-none text-[#384D48]"
         />
 
         <button
           onClick={() => {
-            if (!input.trim()) return;
-            addChapter(subjectId, input);
-            setInput("");
+            if (!chapter.trim()) return;
+            addChapter(subjectId, chapter);
+            setChapter("");
           }}
-          className="bg-[#384D48] w-12 h-12 rounded-[18px] flex items-center justify-center shadow-md active:scale-95 transition"
+          className="bg-[#384D48] w-14 h-14 rounded-[20px] flex items-center justify-center shadow-md active:scale-95 transition"
         >
           <Plus className="text-white" size={18} />
         </button>
       </div>
 
-      {/* STUDY TIME ROW */}
-      <div className="flex items-center gap-3">
+      <div className="flex gap-3 items-center">
         <input
+          type="number"
           value={minutes}
           onChange={(e) => setMinutes(e.target.value)}
           placeholder="Add study minutes"
-          type="number"
-          className="flex-1 bg-[#F1F1F1] rounded-[18px] px-4 py-3 text-[#384D48] outline-none"
+          className="flex-1 bg-[#F2F2F2] rounded-[20px] px-5 py-4 outline-none text-[#384D48]"
         />
 
         <button
@@ -147,7 +218,7 @@ function AddSection({ subjectId, addChapter, logStudyTime }: any) {
             logStudyTime(subjectId, parseInt(minutes));
             setMinutes("");
           }}
-          className="bg-[#ACAD94] text-white px-4 h-12 rounded-[18px] font-bold active:scale-95 transition"
+          className="bg-[#ACAD94] text-white px-6 h-14 rounded-[20px] font-black active:scale-95 transition"
         >
           Add
         </button>
@@ -155,4 +226,4 @@ function AddSection({ subjectId, addChapter, logStudyTime }: any) {
 
     </div>
   );
-                    }
+                 }
