@@ -16,20 +16,12 @@ export interface Subject {
   dailyStudyMinutes: number;
 }
 
-export interface TaskItem {
-  id: string;
-  text: string;
-  priority: "High" | "Mid" | "Low";
-  completed: boolean;
-}
-
 interface MonkState {
   xp: number;
   level: number;
   streak: number;
 
   subjects: Subject[];
-  tasks: TaskItem[];
 
   /* XP */
   addXp: (amount: number) => void;
@@ -39,10 +31,8 @@ interface MonkState {
   toggleChapter: (subjectId: string, chapterId: string) => void;
   logStudyTime: (subjectId: string, minutes: number) => void;
 
-  /* Tasks */
-  addTask: (text: string, priority: "High" | "Mid" | "Low") => void;
-  toggleTask: (id: string) => void;
-  deleteTask: (id: string) => void;
+  /* Reset */
+  resetAll: () => void;
 }
 
 /* ================= STORE ================= */
@@ -58,26 +48,24 @@ export const useStore = create<MonkState>()(
         {
           id: "physics",
           name: "Physics",
-          dailyStudyMinutes: 0,
           chapters: [],
+          dailyStudyMinutes: 0,
         },
         {
           id: "chemistry",
           name: "Chemistry",
-          dailyStudyMinutes: 0,
           chapters: [],
+          dailyStudyMinutes: 0,
         },
         {
           id: "maths",
           name: "Maths",
-          dailyStudyMinutes: 0,
           chapters: [],
+          dailyStudyMinutes: 0,
         },
       ],
 
-      tasks: [],
-
-      /* XP SYSTEM */
+      /* ================= XP SYSTEM ================= */
 
       addXp: (amount) => {
         const newXp = get().xp + amount;
@@ -89,7 +77,7 @@ export const useStore = create<MonkState>()(
         });
       },
 
-      /* SUBJECT LOGIC */
+      /* ================= SUBJECT LOGIC ================= */
 
       addChapter: (subjectId, title) =>
         set((state) => ({
@@ -116,11 +104,16 @@ export const useStore = create<MonkState>()(
             sub.id === subjectId
               ? {
                   ...sub,
-                  chapters: sub.chapters.map((ch) =>
-                    ch.id === chapterId
-                      ? { ...ch, completed: !ch.completed }
-                      : ch
-                  ),
+                  chapters: sub.chapters.map((ch) => {
+                    if (ch.id === chapterId) {
+                      // Reward XP only when marking complete
+                      if (!ch.completed) {
+                        get().addXp(20);
+                      }
+                      return { ...ch, completed: !ch.completed };
+                    }
+                    return ch;
+                  }),
                 }
               : sub
           ),
@@ -138,37 +131,20 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* TASK SYSTEM */
-
-      addTask: (text, priority) =>
-        set((state) => ({
-          tasks: [
-            ...state.tasks,
-            {
-              id: crypto.randomUUID(),
-              text,
-              priority,
-              completed: false,
-            },
+      resetAll: () =>
+        set({
+          xp: 0,
+          level: 1,
+          streak: 1,
+          subjects: [
+            { id: "physics", name: "Physics", chapters: [], dailyStudyMinutes: 0 },
+            { id: "chemistry", name: "Chemistry", chapters: [], dailyStudyMinutes: 0 },
+            { id: "maths", name: "Maths", chapters: [], dailyStudyMinutes: 0 },
           ],
-        })),
-
-      toggleTask: (id) =>
-        set((state) => ({
-          tasks: state.tasks.map((task) =>
-            task.id === id
-              ? { ...task, completed: !task.completed }
-              : task
-          ),
-        })),
-
-      deleteTask: (id) =>
-        set((state) => ({
-          tasks: state.tasks.filter((task) => task.id !== id),
-        })),
+        }),
     }),
     {
-      name: "monk-os-storage", // 🔥 this makes everything permanent
+      name: "monk-os-storage",
     }
   )
 );
