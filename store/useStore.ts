@@ -24,6 +24,21 @@ export interface Chapter {
   completed: boolean;
 }
 
+export interface ScheduleItem {
+  id: string;
+  title: string;
+  time: string;
+  type:
+    | "JEE"
+    | "Study"
+    | "Break"
+    | "Workout"
+    | "Personal"
+    | "Revision"
+    | "MockTest";
+  completed: boolean;
+}
+
 export interface Subject {
   id: string;
   name: string;
@@ -33,22 +48,34 @@ export interface Subject {
   exams: Exam[];
 }
 
+/* ================= STATE ================= */
+
 interface MonkState {
   xp: number;
   level: number;
   streak: number;
 
   subjects: Subject[];
+  schedule: ScheduleItem[];
 
+  /* XP */
   addXp: (amount: number) => void;
 
+  /* Subject */
   addChapter: (subjectId: string, title: string) => void;
   toggleChapter: (subjectId: string, chapterId: string) => void;
   logStudyTime: (subjectId: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
+  /* Marks + Exams */
   addMark: (subjectId: string, mark: Mark) => void;
   addExam: (subjectId: string, exam: Exam) => void;
+
+  /* Planner */
+  setSchedule: (items: ScheduleItem[]) => void;
+  addScheduleItem: (item: ScheduleItem) => void;
+  toggleScheduleItem: (id: string) => void;
+  deleteScheduleItem: (id: string) => void;
 
   resetAll: () => void;
 }
@@ -89,7 +116,9 @@ export const useStore = create<MonkState>()(
         },
       ],
 
-      /* XP */
+      schedule: [],
+
+      /* ================= XP ================= */
 
       addXp: (amount) => {
         const newXp = get().xp + amount;
@@ -101,7 +130,7 @@ export const useStore = create<MonkState>()(
         });
       },
 
-      /* SUBJECT */
+      /* ================= SUBJECT ================= */
 
       addChapter: (subjectId, title) =>
         set((state) => ({
@@ -159,7 +188,7 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* MARK SYSTEM */
+      /* ================= MARK ================= */
 
       addMark: (subjectId, mark) =>
         set((state) => ({
@@ -170,7 +199,7 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* EXAM SYSTEM */
+      /* ================= EXAM ================= */
 
       addExam: (subjectId, exam) =>
         set((state) => ({
@@ -181,39 +210,38 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* RESET */
+      /* ================= PLANNER ================= */
+
+      setSchedule: (items) => set({ schedule: items }),
+
+      addScheduleItem: (item) =>
+        set((state) => ({
+          schedule: [...state.schedule, item],
+        })),
+
+      toggleScheduleItem: (id) =>
+        set((state) => ({
+          schedule: state.schedule.map((item) =>
+            item.id === id
+              ? { ...item, completed: !item.completed }
+              : item
+          ),
+        })),
+
+      deleteScheduleItem: (id) =>
+        set((state) => ({
+          schedule: state.schedule.filter((item) => item.id !== id),
+        })),
+
+      /* ================= RESET ================= */
 
       resetAll: () =>
         set({
           xp: 0,
           level: 1,
           streak: 1,
-          subjects: [
-            {
-              id: "physics",
-              name: "Physics",
-              chapters: [],
-              dailyStudyMinutes: 0,
-              marks: [],
-              exams: [],
-            },
-            {
-              id: "chemistry",
-              name: "Chemistry",
-              chapters: [],
-              dailyStudyMinutes: 0,
-              marks: [],
-              exams: [],
-            },
-            {
-              id: "maths",
-              name: "Maths",
-              chapters: [],
-              dailyStudyMinutes: 0,
-              marks: [],
-              exams: [],
-            },
-          ],
+          subjects: [],
+          schedule: [],
         }),
     }),
     {
