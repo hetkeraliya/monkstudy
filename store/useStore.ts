@@ -26,7 +26,7 @@ export interface Chapter {
 
 export interface ScheduleItem {
   id: string;
-  task: string; // ✅ matches planner
+  task: string; // planner uses this
   time: string;
   type:
     | "JEE"
@@ -36,6 +36,13 @@ export interface ScheduleItem {
     | "Personal"
     | "Revision"
     | "MockTest";
+  completed: boolean;
+}
+
+export interface TaskItem {
+  id: string;
+  text: string; // tasks page uses this
+  priority: "High" | "Mid" | "Low";
   completed: boolean;
 }
 
@@ -57,26 +64,32 @@ interface MonkState {
 
   subjects: Subject[];
   schedule: ScheduleItem[];
+  tasks: TaskItem[];
 
   /* XP */
   addXp: (amount: number) => void;
 
-  /* Subject */
+  /* SUBJECT */
   addChapter: (subjectId: string, title: string) => void;
   toggleChapter: (subjectId: string, chapterId: string) => void;
   logStudyTime: (subjectId: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
-  /* Marks + Exams */
+  /* MARK + EXAM */
   addMark: (subjectId: string, mark: Mark) => void;
   addExam: (subjectId: string, exam: Exam) => void;
 
-  /* Planner */
+  /* PLANNER */
   setSchedule: (items: ScheduleItem[]) => void;
   addScheduleItem: (item: ScheduleItem) => void;
-  updateItem: (id: string, data: Partial<ScheduleItem>) => void; // ✅ needed
+  updateItem: (id: string, data: Partial<ScheduleItem>) => void;
   toggleScheduleItem: (id: string) => void;
   deleteScheduleItem: (id: string) => void;
+
+  /* TASKS */
+  addTask: (text: string, priority: "High" | "Mid" | "Low") => void;
+  deleteTask: (id: string) => void;
+  toggleTask: (id: string) => void;
 
   resetAll: () => void;
 }
@@ -118,17 +131,14 @@ export const useStore = create<MonkState>()(
       ],
 
       schedule: [],
+      tasks: [],
 
       /* ================= XP ================= */
 
       addXp: (amount) => {
         const newXp = get().xp + amount;
         const newLevel = Math.floor(newXp / 100) + 1;
-
-        set({
-          xp: newXp,
-          level: newLevel,
-        });
+        set({ xp: newXp, level: newLevel });
       },
 
       /* ================= SUBJECT ================= */
@@ -241,7 +251,34 @@ export const useStore = create<MonkState>()(
           schedule: state.schedule.filter((item) => item.id !== id),
         })),
 
-      /* ================= RESET ================= */
+      /* ================= TASKS ================= */
+
+      addTask: (text, priority) =>
+        set((state) => ({
+          tasks: [
+            ...state.tasks,
+            {
+              id: crypto.randomUUID(),
+              text,
+              priority,
+              completed: false,
+            },
+          ],
+        })),
+
+      deleteTask: (id) =>
+        set((state) => ({
+          tasks: state.tasks.filter((task) => task.id !== id),
+        })),
+
+      toggleTask: (id) =>
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === id
+              ? { ...task, completed: !task.completed }
+              : task
+          ),
+        })),
 
       resetAll: () =>
         set({
@@ -250,6 +287,7 @@ export const useStore = create<MonkState>()(
           streak: 1,
           subjects: [],
           schedule: [],
+          tasks: [],
         }),
     }),
     {
