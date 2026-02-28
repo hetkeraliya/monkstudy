@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "@/store/useStore";
-import { Play, Pause, Plus } from "lucide-react";
+import { User, Flame, Target, Play, Pause, BookOpen, Plus } from "lucide-react";
 
 export default function Dashboard() {
   const {
     subjects,
     xp,
     level,
+    streak,
     addXp,
     addChapter,
     toggleChapter,
@@ -44,129 +45,164 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F7F9] px-5 pt-6 pb-24">
+    <div className="min-h-screen bg-[#E2E2E2] pb-24 px-5 pt-6 selection:bg-[#ACAD94] selection:text-[#384D48]">
 
       {/* HEADER */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#111827]">
-          Monk Dashboard
-        </h1>
-        <p className="text-sm text-gray-500">
-          Level {level} • {xp} XP
-        </p>
-      </div>
+      <header className="flex justify-between items-center mb-8">
+        <div className="w-12 h-12 bg-white rounded-[16px] shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center justify-center">
+          <User className="text-[#384D48]" size={22} />
+        </div>
 
-      {/* BIG TIMER */}
-      <div className="bg-white rounded-[18px] p-8 shadow-md mb-8 text-center">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase mb-3">
-          Deep Work Timer
+        <h1 className="text-[#384D48] font-black tracking-[0.2em] text-[11px] uppercase">
+          Monk OS
+        </h1>
+
+        <div className="w-12 h-12" />
+      </header>
+
+      {/* GREETING */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-black text-[#384D48] tracking-tight mb-4">
+          Stay disciplined.
         </h2>
 
-        <div className="text-5xl font-bold text-[#111827] mb-6">
+        <div className="flex gap-4">
+
+          {/* STREAK */}
+          <div className="flex-1 bg-white rounded-[20px] p-4 shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#F5F5F5] rounded-xl flex items-center justify-center">
+              <Flame className="text-[#ACAD94]" size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest">
+                Streak
+              </p>
+              <p className="text-lg font-black text-[#384D48]">
+                {streak} Days
+              </p>
+            </div>
+          </div>
+
+          {/* XP */}
+          <div className="flex-1 bg-white rounded-[20px] p-4 shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#F5F5F5] rounded-xl flex items-center justify-center">
+              <Target className="text-[#384D48]" size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest">
+                Level {level}
+              </p>
+              <p className="text-lg font-black text-[#384D48]">
+                {xp} XP
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* POMODORO CARD */}
+      <div className="bg-[#384D48] text-white rounded-[22px] p-6 shadow-[0_4px_12px_rgba(56,77,72,0.08)] mb-8">
+
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-black text-[15px] tracking-wide">
+            Deep Work Protocol
+          </h3>
+        </div>
+
+        <div className="text-5xl font-black text-center mb-6 tracking-wide">
           {formatTime()}
         </div>
 
         <button
           onClick={() => setIsRunning(!isRunning)}
-          className="bg-[#4ADE80] text-white px-6 py-3 rounded-[14px] text-sm font-semibold flex items-center gap-2 mx-auto"
+          className="w-full bg-white text-[#384D48] rounded-[16px] py-3 font-black flex items-center justify-center gap-2 active:scale-95 transition"
         >
           {isRunning ? <Pause size={18} /> : <Play size={18} />}
-          {isRunning ? "Pause" : "Start"}
+          {isRunning ? "Pause Session" : "Start 25m Focus"}
         </button>
+
       </div>
 
       {/* SUBJECTS */}
-      <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <h3 className="text-[11px] font-black text-[#6E7271] uppercase tracking-widest flex items-center gap-2">
+          <BookOpen size={14} /> Active Syllabus
+        </h3>
+      </div>
+
+      <div className="space-y-4">
         {subjects.map((subject) => {
           const total = subject.chapters.length;
           const completed = subject.chapters.filter(c => c.completed).length;
-          const progress =
-            total === 0 ? 0 : Math.round((completed / total) * 100);
+          const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
 
           return (
-            <div key={subject.id} className="bg-white p-5 rounded-[18px] shadow-sm">
+            <div
+              key={subject.id}
+              className="bg-white rounded-[22px] p-5 shadow-[0_4px_12px_rgba(56,77,72,0.05)]"
+            >
 
-              {/* TITLE */}
-              <div className="flex justify-between mb-2">
-                <h3 className="font-semibold text-[#111827]">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-black text-[17px] text-[#384D48]">
                   {subject.name}
-                </h3>
-                <span className="text-sm text-gray-500">
+                </h4>
+                <span className="text-[12px] font-bold text-[#ACAD94]">
                   {progress}%
                 </span>
               </div>
 
-              {/* PROGRESS BAR */}
-              <div className="h-2 bg-gray-200 rounded-full mb-4">
+              <div className="h-1.5 w-full bg-[#F5F5F5] rounded-full overflow-hidden mb-4">
                 <div
-                  className="h-2 bg-[#60A5FA] rounded-full transition-all"
+                  className="h-full bg-[#384D48] rounded-full transition-all duration-700"
                   style={{ width: `${progress}%` }}
                 />
               </div>
 
               {/* CHAPTERS */}
-              <div className="space-y-2 mb-4">
+              <div className="space-y-2 mb-3">
                 {subject.chapters.map((chapter) => (
                   <div
                     key={chapter.id}
-                    className="flex justify-between items-center bg-[#F6F7F9] px-3 py-2 rounded-[12px]"
+                    className="flex justify-between items-center bg-[#F5F5F5] px-3 py-2 rounded-[12px]"
                   >
-                    <span
-                      className={`text-sm ${
-                        chapter.completed
-                          ? "line-through text-gray-400"
-                          : "text-[#111827]"
-                      }`}
-                    >
+                    <span className={`text-sm ${chapter.completed ? "line-through text-gray-400" : "text-[#384D48]"}`}>
                       {chapter.title}
                     </span>
 
                     <input
                       type="checkbox"
                       checked={chapter.completed}
-                      onChange={() =>
-                        toggleChapter(subject.id, chapter.id)
-                      }
-                      className="accent-[#4ADE80]"
+                      onChange={() => toggleChapter(subject.id, chapter.id)}
+                      className="accent-[#384D48]"
                     />
                   </div>
                 ))}
               </div>
 
-              {/* ADD CHAPTER */}
-              <AddChapter subjectId={subject.id} />
+              <AddChapter subjectId={subject.id} addChapter={addChapter} />
 
-              {/* LOG STUDY */}
-              <button
-                onClick={() => {
-                  logStudyTime(subject.id, 30);
-                  addXp(10);
-                }}
-                className="mt-3 text-xs bg-[#60A5FA] text-white px-3 py-2 rounded-[12px]"
-              >
-                +30min Study
-              </button>
             </div>
           );
         })}
       </div>
+
     </div>
   );
 }
 
-/* ================= ADD CHAPTER COMPONENT ================= */
+/* ================= ADD CHAPTER ================= */
 
-function AddChapter({ subjectId }: { subjectId: string }) {
+function AddChapter({ subjectId, addChapter }: any) {
   const [input, setInput] = useState("");
-  const addChapter = useStore((s) => s.addChapter);
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 mt-2">
       <input
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Add chapter..."
-        className="flex-1 text-sm px-3 py-2 rounded-[12px] border outline-none"
+        className="flex-1 text-sm px-3 py-2 rounded-[12px] bg-[#F5F5F5] outline-none text-[#384D48]"
       />
       <button
         onClick={() => {
@@ -174,7 +210,7 @@ function AddChapter({ subjectId }: { subjectId: string }) {
           addChapter(subjectId, input);
           setInput("");
         }}
-        className="bg-[#4ADE80] text-white px-3 py-2 rounded-[12px]"
+        className="bg-[#384D48] text-white px-3 py-2 rounded-[12px]"
       >
         <Plus size={16} />
       </button>
