@@ -1,242 +1,150 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
-import {
-  User,
-  Flame,
-  Target,
-  Play,
-  Pause,
-  RotateCcw,
-  BookOpen,
-} from "lucide-react";
+import { Play, Pause, Plus } from "lucide-react";
 
 export default function Dashboard() {
-  // -------------------------
-  // STORE STATE
-  // -------------------------
-  const user = useStore((state) => state.user);
-  const subjects = useStore((state) => state.subjects);
-  const xp = useStore((state) => state.xp);
-  const level = useStore((state) => state.level);
-  const streak = useStore((state) => state.streak);
-  const addXp = useStore((state) => state.addXp);
-  const completeChapter = useStore((state) => state.completeChapter);
-  const logStudyTime = useStore((state) => state.logStudyTime);
+  const {
+    subjects,
+    xp,
+    level,
+    addXp,
+    addChapter,
+    toggleChapter,
+    logStudyTime,
+  } = useStore();
 
-  const xpProgress = xp % 100;
+  /* ================= POMODORO ================= */
 
-  // -------------------------
-  // POMODORO STATE
-  // -------------------------
-  const WORK_TIME = 25 * 60;
-  const BREAK_TIME = 5 * 60;
-
-  const [seconds, setSeconds] = useState(WORK_TIME);
+  const [seconds, setSeconds] = useState(1500);
   const [isRunning, setIsRunning] = useState(false);
-  const [isBreak, setIsBreak] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    if (!isRunning) return;
 
-    if (isRunning) {
-      interval = setInterval(() => {
-        setSeconds((prev) => {
-          if (prev <= 1) {
-            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-
-            if (!isBreak) {
-              addXp(25);
-            }
-
-            setIsBreak(!isBreak);
-            return isBreak ? WORK_TIME : BREAK_TIME;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    const interval = setInterval(() => {
+      setSeconds((prev) => {
+        if (prev <= 1) {
+          setIsRunning(false);
+          addXp(30);
+          return 1500;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, isBreak, addXp]);
+  }, [isRunning, addXp]);
 
   const formatTime = () => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  const progress =
-    ((isBreak ? BREAK_TIME : WORK_TIME) - seconds) /
-    (isBreak ? BREAK_TIME : WORK_TIME);
-
-  const radius = 70;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - progress * circumference;
-
-  // -------------------------
-  // UI
-  // -------------------------
   return (
-    <div className="min-h-screen bg-[#E2E2E2] pb-24 px-5 pt-6">
+    <div className="min-h-screen bg-[#F6F7F9] px-5 pt-6 pb-24">
 
       {/* HEADER */}
-      <header className="flex justify-between items-center mb-8">
-        <Link
-          href="/profile"
-          className="w-12 h-12 bg-white rounded-[16px] shadow flex items-center justify-center active:scale-95 transition"
-        >
-          <User className="text-[#384D48]" size={22} />
-        </Link>
-
-        <h1 className="text-[#384D48] font-black tracking-[0.2em] text-[11px] uppercase">
-          Monk OS
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[#111827]">
+          Monk Dashboard
         </h1>
-
-        <div className="w-12 h-12" />
-      </header>
-
-      {/* GREETING */}
-      <h2 className="text-2xl font-black text-[#384D48] mb-6">
-        Welcome back,{" "}
-        <span className="text-[#ACAD94]">
-          {user?.displayName?.split(" ")[0] || "Initiate"}
-        </span>
-      </h2>
-
-      {/* STREAK + XP */}
-      <div className="flex gap-4 mb-8">
-        <StatCard icon={<Flame size={18} />} label="Streak" value={`${streak} Days`} />
-        <StatCard icon={<Target size={18} />} label="XP" value={xp} />
-      </div>
-
-      {/* LEVEL BAR */}
-      <div className="bg-white rounded-[20px] p-5 shadow mb-10">
-        <p className="text-xs font-bold text-[#6E7271] uppercase mb-1">
-          Level {level}
-        </p>
-
-        <div className="h-3 bg-[#F5F5F5] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[#384D48] transition-all duration-500"
-            style={{ width: `${xpProgress}%` }}
-          />
-        </div>
-
-        <p className="text-xs mt-2 text-[#6E7271]">
-          {xpProgress}/100 XP to next level
+        <p className="text-sm text-gray-500">
+          Level {level} • {xp} XP
         </p>
       </div>
 
-      {/* BIG POMODORO */}
-      <div className="bg-white rounded-[26px] p-8 shadow mb-10 flex flex-col items-center">
+      {/* BIG TIMER */}
+      <div className="bg-white rounded-[18px] p-8 shadow-md mb-8 text-center">
+        <h2 className="text-xs font-semibold text-gray-400 uppercase mb-3">
+          Deep Work Timer
+        </h2>
 
-        <div className="relative w-44 h-44 mb-6">
-          <svg className="w-full h-full transform -rotate-90">
-            <circle
-              cx="88"
-              cy="88"
-              r={radius}
-              stroke="#F5F5F5"
-              strokeWidth="10"
-              fill="none"
-            />
-            <circle
-              cx="88"
-              cy="88"
-              r={radius}
-              stroke="#384D48"
-              strokeWidth="10"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-              className="transition-all duration-1000 ease-linear"
-            />
-          </svg>
-
-          <div className="absolute inset-0 flex items-center justify-center text-3xl font-black text-[#384D48]">
-            {formatTime()}
-          </div>
+        <div className="text-5xl font-bold text-[#111827] mb-6">
+          {formatTime()}
         </div>
 
-        <p className="text-sm font-bold text-[#6E7271] mb-6">
-          {isBreak ? "Break Mode" : "Deep Work Mode"}
-        </p>
-
-        <div className="flex gap-6">
-          <button
-            onClick={() => setIsRunning(!isRunning)}
-            className="bg-[#384D48] text-white p-4 rounded-full active:scale-95 transition"
-          >
-            {isRunning ? <Pause size={20} /> : <Play size={20} />}
-          </button>
-
-          <button
-            onClick={() => {
-              setIsRunning(false);
-              setIsBreak(false);
-              setSeconds(WORK_TIME);
-            }}
-            className="bg-[#F5F5F5] p-4 rounded-full active:scale-95 transition"
-          >
-            <RotateCcw size={20} />
-          </button>
-        </div>
+        <button
+          onClick={() => setIsRunning(!isRunning)}
+          className="bg-[#4ADE80] text-white px-6 py-3 rounded-[14px] text-sm font-semibold flex items-center gap-2 mx-auto"
+        >
+          {isRunning ? <Pause size={18} /> : <Play size={18} />}
+          {isRunning ? "Pause" : "Start"}
+        </button>
       </div>
 
       {/* SUBJECTS */}
-      <h3 className="text-xs font-black text-[#6E7271] uppercase mb-4 flex items-center gap-2">
-        <BookOpen size={14} /> Active Syllabus
-      </h3>
-
-      <div className="space-y-4">
+      <div className="space-y-6">
         {subjects.map((subject) => {
-          const progressPercent = Math.round(
-            (subject.completedChapters / subject.totalChapters) * 100
-          );
-
-          const hours = Math.floor(subject.dailyStudyMinutes / 60);
-          const mins = subject.dailyStudyMinutes % 60;
+          const total = subject.chapters.length;
+          const completed = subject.chapters.filter(c => c.completed).length;
+          const progress =
+            total === 0 ? 0 : Math.round((completed / total) * 100);
 
           return (
-            <div
-              key={subject.id}
-              className="bg-white rounded-[22px] p-5 shadow active:scale-[0.98] transition"
-            >
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-black text-[#384D48]">
-                  {subject.name}
-                </h4>
+            <div key={subject.id} className="bg-white p-5 rounded-[18px] shadow-sm">
 
-                <span className="text-xs font-bold text-[#ACAD94]">
-                  {progressPercent}%
+              {/* TITLE */}
+              <div className="flex justify-between mb-2">
+                <h3 className="font-semibold text-[#111827]">
+                  {subject.name}
+                </h3>
+                <span className="text-sm text-gray-500">
+                  {progress}%
                 </span>
               </div>
 
-              <div className="h-2 bg-[#F5F5F5] rounded-full overflow-hidden mb-3">
+              {/* PROGRESS BAR */}
+              <div className="h-2 bg-gray-200 rounded-full mb-4">
                 <div
-                  className="h-full bg-[#384D48] transition-all duration-500"
-                  style={{ width: `${progressPercent}%` }}
+                  className="h-2 bg-[#60A5FA] rounded-full transition-all"
+                  style={{ width: `${progress}%` }}
                 />
               </div>
 
-              <p className="text-xs text-[#6E7271] mb-3">
-                {hours}h {mins}m studied today
-              </p>
+              {/* CHAPTERS */}
+              <div className="space-y-2 mb-4">
+                {subject.chapters.map((chapter) => (
+                  <div
+                    key={chapter.id}
+                    className="flex justify-between items-center bg-[#F6F7F9] px-3 py-2 rounded-[12px]"
+                  >
+                    <span
+                      className={`text-sm ${
+                        chapter.completed
+                          ? "line-through text-gray-400"
+                          : "text-[#111827]"
+                      }`}
+                    >
+                      {chapter.title}
+                    </span>
 
+                    <input
+                      type="checkbox"
+                      checked={chapter.completed}
+                      onChange={() =>
+                        toggleChapter(subject.id, chapter.id)
+                      }
+                      className="accent-[#4ADE80]"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* ADD CHAPTER */}
+              <AddChapter subjectId={subject.id} />
+
+              {/* LOG STUDY */}
               <button
                 onClick={() => {
-                  logStudyTime(subject.id, 25);
-                  completeChapter(subject.id);
-                  addXp(15);
-                  if (navigator.vibrate) navigator.vibrate(15);
+                  logStudyTime(subject.id, 30);
+                  addXp(10);
                 }}
-                className="bg-[#F5F5F5] px-4 py-2 rounded-[12px] text-xs font-black active:bg-[#E2E2E2] transition"
+                className="mt-3 text-xs bg-[#60A5FA] text-white px-3 py-2 rounded-[12px]"
               >
-                Study +25m
+                +30min Study
               </button>
             </div>
           );
@@ -246,18 +154,30 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ icon, label, value }: any) {
+/* ================= ADD CHAPTER COMPONENT ================= */
+
+function AddChapter({ subjectId }: { subjectId: string }) {
+  const [input, setInput] = useState("");
+  const addChapter = useStore((s) => s.addChapter);
+
   return (
-    <div className="flex-1 bg-white rounded-[20px] p-4 shadow flex items-center gap-3">
-      <div className="w-9 h-9 bg-[#F5F5F5] rounded-xl flex items-center justify-center text-[#384D48]">
-        {icon}
-      </div>
-      <div>
-        <p className="text-[10px] font-black text-[#6E7271] uppercase">
-          {label}
-        </p>
-        <p className="text-lg font-black text-[#384D48]">{value}</p>
-      </div>
+    <div className="flex gap-2">
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Add chapter..."
+        className="flex-1 text-sm px-3 py-2 rounded-[12px] border outline-none"
+      />
+      <button
+        onClick={() => {
+          if (!input.trim()) return;
+          addChapter(subjectId, input);
+          setInput("");
+        }}
+        className="bg-[#4ADE80] text-white px-3 py-2 rounded-[12px]"
+      >
+        <Plus size={16} />
+      </button>
     </div>
   );
-      }
+}
