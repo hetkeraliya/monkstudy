@@ -40,16 +40,13 @@ interface MonkState {
 
   subjects: Subject[];
 
-  /* XP */
   addXp: (amount: number) => void;
 
-  /* Subject logic */
   addChapter: (subjectId: string, title: string) => void;
   toggleChapter: (subjectId: string, chapterId: string) => void;
   logStudyTime: (subjectId: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
-  /* Marks + Exams */
   addMark: (subjectId: string, mark: Mark) => void;
   addExam: (subjectId: string, exam: Exam) => void;
 
@@ -92,7 +89,7 @@ export const useStore = create<MonkState>()(
         },
       ],
 
-      /* ================= XP ================= */
+      /* XP */
 
       addXp: (amount) => {
         const newXp = get().xp + amount;
@@ -104,7 +101,7 @@ export const useStore = create<MonkState>()(
         });
       },
 
-      /* ================= SUBJECT ================= */
+      /* SUBJECT */
 
       addChapter: (subjectId, title) =>
         set((state) => ({
@@ -133,9 +130,7 @@ export const useStore = create<MonkState>()(
                   ...sub,
                   chapters: sub.chapters.map((ch) => {
                     if (ch.id === chapterId) {
-                      if (!ch.completed) {
-                        get().addXp(20);
-                      }
+                      if (!ch.completed) get().addXp(20);
                       return { ...ch, completed: !ch.completed };
                     }
                     return ch;
@@ -164,7 +159,7 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* ================= MARK SYSTEM ================= */
+      /* MARK SYSTEM */
 
       addMark: (subjectId, mark) =>
         set((state) => ({
@@ -175,7 +170,7 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* ================= EXAM SYSTEM ================= */
+      /* EXAM SYSTEM */
 
       addExam: (subjectId, exam) =>
         set((state) => ({
@@ -186,7 +181,7 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* ================= RESET ================= */
+      /* RESET */
 
       resetAll: () =>
         set({
