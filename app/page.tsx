@@ -1,10 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
-import { User, Flame, Target, Play, Pause, BookOpen, Plus } from "lucide-react";
+import {
+  User,
+  Flame,
+  Target,
+  Play,
+  Pause,
+  BookOpen,
+  Plus,
+  Trophy,
+} from "lucide-react";
 
 export default function Dashboard() {
+  const router = useRouter();
+
   const {
     subjects,
     xp,
@@ -13,8 +25,14 @@ export default function Dashboard() {
     addXp,
     addChapter,
     toggleChapter,
-    logStudyTime,
   } = useStore();
+
+  /* ================= XP RING ================= */
+
+  const xpProgress = xp % 100;
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (xpProgress / 100) * circumference;
 
   /* ================= POMODORO ================= */
 
@@ -29,6 +47,7 @@ export default function Dashboard() {
         if (prev <= 1) {
           setIsRunning(false);
           addXp(30);
+          triggerAchievement("Focus Session Complete +30 XP");
           return 1500;
         }
         return prev - 1;
@@ -44,14 +63,40 @@ export default function Dashboard() {
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  return (
-    <div className="min-h-screen bg-[#E2E2E2] pb-24 px-5 pt-6 selection:bg-[#ACAD94] selection:text-[#384D48]">
+  /* ================= LEVEL UP POPUP ================= */
 
-      {/* HEADER */}
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [prevLevel, setPrevLevel] = useState(level);
+
+  useEffect(() => {
+    if (level > prevLevel) {
+      setShowLevelUp(true);
+      setPrevLevel(level);
+      setTimeout(() => setShowLevelUp(false), 3000);
+    }
+  }, [level, prevLevel]);
+
+  /* ================= ACHIEVEMENT ================= */
+
+  const [achievement, setAchievement] = useState("");
+
+  const triggerAchievement = (text: string) => {
+    setAchievement(text);
+    setTimeout(() => setAchievement(""), 3000);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#E2E2E2] pb-24 px-5 pt-6">
+
+      {/* ================= HEADER ================= */}
+
       <header className="flex justify-between items-center mb-8">
-        <div className="w-12 h-12 bg-white rounded-[16px] shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center justify-center">
+        <button
+          onClick={() => router.push("/profile")}
+          className="w-12 h-12 bg-white rounded-[16px] shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center justify-center active:scale-95 transition"
+        >
           <User className="text-[#384D48]" size={22} />
-        </div>
+        </button>
 
         <h1 className="text-[#384D48] font-black tracking-[0.2em] text-[11px] uppercase">
           Monk OS
@@ -60,57 +105,68 @@ export default function Dashboard() {
         <div className="w-12 h-12" />
       </header>
 
-      {/* GREETING */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-black text-[#384D48] tracking-tight mb-4">
-          Stay disciplined.
-        </h2>
+      {/* ================= XP RING ================= */}
 
-        <div className="flex gap-4">
+      <div className="flex justify-center mb-8">
+        <div className="relative w-28 h-28 flex items-center justify-center">
+          <svg className="w-28 h-28 transform -rotate-90">
+            <circle
+              cx="56"
+              cy="56"
+              r={radius}
+              fill="none"
+              stroke="#F5F5F5"
+              strokeWidth="8"
+            />
+            <circle
+              cx="56"
+              cy="56"
+              r={radius}
+              fill="none"
+              stroke="#384D48"
+              strokeWidth="8"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              className="transition-all duration-700 ease-out"
+            />
+          </svg>
 
-          {/* STREAK */}
-          <div className="flex-1 bg-white rounded-[20px] p-4 shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center gap-4">
-            <div className="w-10 h-10 bg-[#F5F5F5] rounded-xl flex items-center justify-center">
-              <Flame className="text-[#ACAD94]" size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest">
-                Streak
-              </p>
-              <p className="text-lg font-black text-[#384D48]">
-                {streak} Days
-              </p>
-            </div>
+          <div className="absolute text-center">
+            <p className="text-sm font-bold text-[#6E7271]">Level</p>
+            <p className="text-2xl font-black text-[#384D48]">{level}</p>
           </div>
-
-          {/* XP */}
-          <div className="flex-1 bg-white rounded-[20px] p-4 shadow-[0_4px_12px_rgba(56,77,72,0.05)] flex items-center gap-4">
-            <div className="w-10 h-10 bg-[#F5F5F5] rounded-xl flex items-center justify-center">
-              <Target className="text-[#384D48]" size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest">
-                Level {level}
-              </p>
-              <p className="text-lg font-black text-[#384D48]">
-                {xp} XP
-              </p>
-            </div>
-          </div>
-
         </div>
       </div>
 
-      {/* POMODORO CARD */}
-      <div className="bg-[#384D48] text-white rounded-[22px] p-6 shadow-[0_4px_12px_rgba(56,77,72,0.08)] mb-8">
+      {/* ================= STATS ================= */}
 
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-black text-[15px] tracking-wide">
-            Deep Work Protocol
-          </h3>
+      <div className="flex gap-4 mb-8">
+        <div className="flex-1 bg-white rounded-[20px] p-4 shadow-sm flex items-center gap-4">
+          <Flame className="text-[#ACAD94]" />
+          <div>
+            <p className="text-xs font-black text-[#6E7271] uppercase">
+              Streak
+            </p>
+            <p className="font-black text-[#384D48]">{streak} Days</p>
+          </div>
         </div>
 
-        <div className="text-5xl font-black text-center mb-6 tracking-wide">
+        <div className="flex-1 bg-white rounded-[20px] p-4 shadow-sm flex items-center gap-4">
+          <Target className="text-[#384D48]" />
+          <div>
+            <p className="text-xs font-black text-[#6E7271] uppercase">
+              XP
+            </p>
+            <p className="font-black text-[#384D48]">{xp}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= POMODORO ================= */}
+
+      <div className="bg-[#384D48] text-white rounded-[22px] p-6 mb-8 shadow-lg">
+        <div className="text-5xl font-black text-center mb-6">
           {formatTime()}
         </div>
 
@@ -119,73 +175,73 @@ export default function Dashboard() {
           className="w-full bg-white text-[#384D48] rounded-[16px] py-3 font-black flex items-center justify-center gap-2 active:scale-95 transition"
         >
           {isRunning ? <Pause size={18} /> : <Play size={18} />}
-          {isRunning ? "Pause Session" : "Start 25m Focus"}
+          {isRunning ? "Pause" : "Start Focus"}
         </button>
-
       </div>
 
-      {/* SUBJECTS */}
-      <div className="flex items-center justify-between mb-4 px-1">
-        <h3 className="text-[11px] font-black text-[#6E7271] uppercase tracking-widest flex items-center gap-2">
-          <BookOpen size={14} /> Active Syllabus
-        </h3>
-      </div>
+      {/* ================= SUBJECTS ================= */}
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         {subjects.map((subject) => {
           const total = subject.chapters.length;
-          const completed = subject.chapters.filter(c => c.completed).length;
-          const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+          const done = subject.chapters.filter(c => c.completed).length;
+          const percent = total === 0 ? 0 : Math.round((done / total) * 100);
 
           return (
-            <div
-              key={subject.id}
-              className="bg-white rounded-[22px] p-5 shadow-[0_4px_12px_rgba(56,77,72,0.05)]"
-            >
-
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-black text-[17px] text-[#384D48]">
-                  {subject.name}
-                </h4>
-                <span className="text-[12px] font-bold text-[#ACAD94]">
-                  {progress}%
-                </span>
+            <div key={subject.id} className="bg-white p-5 rounded-[22px] shadow-sm">
+              <div className="flex justify-between mb-3">
+                <h4 className="font-black text-[#384D48]">{subject.name}</h4>
+                <span className="text-[#ACAD94] font-bold">{percent}%</span>
               </div>
 
-              <div className="h-1.5 w-full bg-[#F5F5F5] rounded-full overflow-hidden mb-4">
+              <div className="h-2 bg-[#F5F5F5] rounded-full mb-4 overflow-hidden">
                 <div
-                  className="h-full bg-[#384D48] rounded-full transition-all duration-700"
-                  style={{ width: `${progress}%` }}
+                  className="h-full bg-[#384D48] transition-all duration-700"
+                  style={{ width: `${percent}%` }}
                 />
               </div>
 
-              {/* CHAPTERS */}
-              <div className="space-y-2 mb-3">
-                {subject.chapters.map((chapter) => (
-                  <div
-                    key={chapter.id}
-                    className="flex justify-between items-center bg-[#F5F5F5] px-3 py-2 rounded-[12px]"
-                  >
-                    <span className={`text-sm ${chapter.completed ? "line-through text-gray-400" : "text-[#384D48]"}`}>
-                      {chapter.title}
-                    </span>
-
-                    <input
-                      type="checkbox"
-                      checked={chapter.completed}
-                      onChange={() => toggleChapter(subject.id, chapter.id)}
-                      className="accent-[#384D48]"
-                    />
-                  </div>
-                ))}
-              </div>
+              {subject.chapters.map(ch => (
+                <div key={ch.id} className="flex justify-between mb-2">
+                  <span className={ch.completed ? "line-through text-gray-400" : "text-[#384D48]"}>
+                    {ch.title}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={ch.completed}
+                    onChange={() => {
+                      toggleChapter(subject.id, ch.id);
+                      if (!ch.completed) triggerAchievement("Chapter Completed +20 XP");
+                    }}
+                    className="accent-[#384D48]"
+                  />
+                </div>
+              ))}
 
               <AddChapter subjectId={subject.id} addChapter={addChapter} />
-
             </div>
           );
         })}
       </div>
+
+      {/* ================= LEVEL UP POPUP ================= */}
+
+      {showLevelUp && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-white shadow-xl px-6 py-4 rounded-2xl flex items-center gap-3 animate-bounce z-50">
+          <Trophy className="text-[#ACAD94]" />
+          <p className="font-black text-[#384D48]">
+            Level Up! You reached Level {level}
+          </p>
+        </div>
+      )}
+
+      {/* ================= ACHIEVEMENT TOAST ================= */}
+
+      {achievement && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#384D48] text-white px-5 py-3 rounded-xl shadow-lg animate-slideUp z-50">
+          {achievement}
+        </div>
+      )}
 
     </div>
   );
@@ -197,12 +253,12 @@ function AddChapter({ subjectId, addChapter }: any) {
   const [input, setInput] = useState("");
 
   return (
-    <div className="flex gap-2 mt-2">
+    <div className="flex gap-2 mt-3">
       <input
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Add chapter..."
-        className="flex-1 text-sm px-3 py-2 rounded-[12px] bg-[#F5F5F5] outline-none text-[#384D48]"
+        className="flex-1 px-3 py-2 bg-[#F5F5F5] rounded-xl outline-none"
       />
       <button
         onClick={() => {
@@ -210,10 +266,10 @@ function AddChapter({ subjectId, addChapter }: any) {
           addChapter(subjectId, input);
           setInput("");
         }}
-        className="bg-[#384D48] text-white px-3 py-2 rounded-[12px]"
+        className="bg-[#384D48] text-white px-4 rounded-xl"
       >
         <Plus size={16} />
       </button>
     </div>
   );
-}
+      }
