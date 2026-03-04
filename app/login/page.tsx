@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -12,7 +12,23 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState("");
+
+  // Prevent logged-in users from seeing login page
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getSession();
+
+      if (data.session) {
+        router.replace("/");
+      } else {
+        setCheckingSession(false);
+      }
+    };
+
+    checkUser();
+  }, [router]);
 
   // Email login
   const handleLogin = async (e: React.FormEvent) => {
@@ -30,16 +46,33 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      router.push("/");
+      router.replace("/");
     }
   };
 
+  // Google login
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+  };
+
+  // Loading screen while checking session
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#E2E2E2]">
+        <div className="w-8 h-8 border-4 border-[#384D48] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#E2E2E2] px-4">
       <div className="bg-white w-full max-w-sm rounded-[18px] shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-7 space-y-6">
 
-        {/* Title */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-semibold text-[#111827]">
             Welcome Back
@@ -49,12 +82,11 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Error */}
         {error && (
           <p className="text-red-500 text-sm text-center">{error}</p>
         )}
 
-        {/* Email Login */}
+        {/* Email login */}
         <form onSubmit={handleLogin} className="space-y-4">
 
           <input
@@ -84,9 +116,22 @@ export default function LoginPage() {
           </button>
 
         </form>
-        
 
-        {/* Signup Link */}
+        {/* Divider */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-[#D8D4D5]" />
+          <span className="text-xs text-[#6E7271]">OR</span>
+          <div className="flex-1 h-px bg-[#D8D4D5]" />
+        </div>
+
+        {/* Google login */}
+        <button
+          onClick={signInWithGoogle}
+          className="w-full flex items-center justify-center gap-3 border border-[#D8D4D5] rounded-xl py-3 font-medium active:scale-95 transition"
+        >
+          Continue with Google
+        </button>
+
         <p className="text-sm text-center text-[#6E7271]">
           Don't have an account?{" "}
           <span
