@@ -49,14 +49,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    });
-  };
+  
 
   if (checkingSession) {
     return (
@@ -115,20 +108,8 @@ export default function LoginPage() {
         </form>
 
         {/* Divider */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-[#D8D4D5]" />
-          <span className="text-xs text-[#6E7271]">OR</span>
-          <div className="flex-1 h-px bg-[#D8D4D5]" />
-        </div>
-
         {/* Google Login */}
-        <button
-          onClick={handleGoogleLogin}
-          className="w-full flex items-center justify-center gap-3 border border-[#D8D4D5] rounded-xl py-3 font-medium active:scale-95 transition"
-        >
-          Continue with Google
-        </button>
-
+       
         <p className="text-sm text-center text-[#6E7271]">
           Don't have an account?{" "}
           <span
