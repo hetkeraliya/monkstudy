@@ -1,20 +1,30 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "./AuthProvider";
 
-export default function AuthGuard({ children }: { children: React.ReactNode }) {
+export default function AuthGuard({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  const publicRoutes = ["/login", "/register"];
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login");
+    if (!loading) {
+      if (!user && !publicRoutes.includes(pathname)) {
+        router.replace("/login");
+      }
     }
-  }, [user, loading, router]);
+  }, [user, loading, pathname, router]);
 
-  if (loading || !user) {
+  // show spinner only while checking auth
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#E2E2E2]">
         <div className="w-8 h-8 border-4 border-[#384D48] border-t-transparent rounded-full animate-spin"></div>
