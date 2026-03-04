@@ -16,8 +16,10 @@ export default function AuthGuard({
   const publicRoutes = ["/login", "/register", "/auth/callback"];
 
   useEffect(() => {
-    if (!loading && !user && !publicRoutes.includes(pathname)) {
-      router.replace("/login");
+    if (!loading) {
+      if (!user && !publicRoutes.includes(pathname)) {
+        router.replace("/login");
+      }
     }
   }, [user, loading, pathname, router]);
 
