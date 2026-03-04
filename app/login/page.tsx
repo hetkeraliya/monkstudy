@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Email login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -33,27 +34,22 @@ export default function LoginPage() {
     }
   };
 
+  // Google login
   const signInWithGoogle = async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/`,
-    },
-  });
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
 
-  if (error) {
-    console.error(error);
-  }
-};
-
-  if (error) {
-    console.error(error);
-  }
-};
+    if (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#E2E2E2] px-4">
-
       <div className="bg-white w-full max-w-sm rounded-[18px] shadow-[0_4px_12px_rgba(0,0,0,0.05)] p-7 space-y-6">
 
         {/* Title */}
@@ -114,12 +110,7 @@ export default function LoginPage() {
           onClick={signInWithGoogle}
           className="w-full flex items-center justify-center gap-3 border border-[#D8D4D5] rounded-xl py-3 font-medium active:scale-95 transition"
         >
-          {/* Google Logo SVG */}
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 48 48"
-          >
+          <svg width="18" height="18" viewBox="0 0 48 48">
             <path
               fill="#EA4335"
               d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.86-6.86C35.65 2.4 30.2 0 24 0 14.64 0 6.73 5.82 2.7 14.09l8.01 6.22C12.82 14.14 17.99 9.5 24 9.5z"
