@@ -181,14 +181,16 @@ function AddRow({ subjectId, addChapter, logStudyTime }: any) {
   const [minutes, setMinutes] = useState("");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
 
-      <div className="flex gap-3 items-center">
+      {/* ADD CHAPTER */}
+      <div className="flex items-center gap-3 w-full">
+
         <input
           value={chapter}
           onChange={(e) => setChapter(e.target.value)}
           placeholder="Add chapter..."
-          className="flex-1 bg-[#F2F2F2] rounded-[20px] px-5 py-4 outline-none text-[#384D48]"
+          className="flex-1 min-w-0 bg-[#F2F2F2] rounded-[18px] px-4 py-3 outline-none text-[#384D48]"
         />
 
         <button
@@ -197,19 +199,22 @@ function AddRow({ subjectId, addChapter, logStudyTime }: any) {
             addChapter(subjectId, chapter);
             setChapter("");
           }}
-          className="bg-[#384D48] w-14 h-14 rounded-[20px] flex items-center justify-center shadow-md active:scale-95 transition"
+          className="shrink-0 w-11 h-11 bg-[#384D48] rounded-[16px] text-white flex items-center justify-center active:scale-95 transition"
         >
-          <Plus className="text-white" size={18} />
+          +
         </button>
+
       </div>
 
-      <div className="flex gap-3 items-center">
+      {/* ADD STUDY TIME */}
+      <div className="flex items-center gap-3 w-full">
+
         <input
           type="number"
           value={minutes}
           onChange={(e) => setMinutes(e.target.value)}
           placeholder="Add study minutes"
-          className="flex-1 bg-[#F2F2F2] rounded-[20px] px-5 py-4 outline-none text-[#384D48]"
+          className="flex-1 min-w-0 bg-[#F2F2F2] rounded-[18px] px-4 py-3 outline-none text-[#384D48]"
         />
 
         <button
@@ -218,12 +223,13 @@ function AddRow({ subjectId, addChapter, logStudyTime }: any) {
             logStudyTime(subjectId, parseInt(minutes));
             setMinutes("");
           }}
-          className="bg-[#ACAD94] text-white px-6 h-14 rounded-[20px] font-black active:scale-95 transition"
+          className="shrink-0 px-4 h-11 bg-[#ACAD94] text-white font-bold rounded-[16px] active:scale-95 transition"
         >
           Add
         </button>
+
       </div>
 
     </div>
   );
-                 }
+}
