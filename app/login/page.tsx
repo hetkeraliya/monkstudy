@@ -106,7 +106,7 @@ export default function LoginPage() {
 
         {/* Google Button */}
         <button
-          onClick={handleGoogleLogin}
+          onClick={signInWithGoogle}
           className="w-full flex items-center justify-center gap-3 border border-[#D8D4D5] rounded-xl py-3 font-medium active:scale-95 transition"
         >
           {/* Google Logo SVG */}
