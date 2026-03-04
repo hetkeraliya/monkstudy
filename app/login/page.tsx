@@ -15,9 +15,9 @@ export default function LoginPage() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState("");
 
-  // Prevent logged-in users from seeing login page
+  // Check session to prevent login flash
   useEffect(() => {
-    const checkUser = async () => {
+    const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
 
       if (data.session) {
@@ -27,10 +27,9 @@ export default function LoginPage() {
       }
     };
 
-    checkUser();
+    checkSession();
   }, [router]);
 
-  // Email login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -50,8 +49,7 @@ export default function LoginPage() {
     }
   };
 
-  // Google login
-  const signInWithGoogle = async () => {
+  const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -60,7 +58,6 @@ export default function LoginPage() {
     });
   };
 
-  // Loading screen while checking session
   if (checkingSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#E2E2E2]">
@@ -124,9 +121,9 @@ export default function LoginPage() {
           <div className="flex-1 h-px bg-[#D8D4D5]" />
         </div>
 
-        {/* Google login */}
+        {/* Google Login */}
         <button
-          onClick={signInWithGoogle}
+          onClick={handleGoogleLogin}
           className="w-full flex items-center justify-center gap-3 border border-[#D8D4D5] rounded-xl py-3 font-medium active:scale-95 transition"
         >
           Continue with Google
@@ -145,4 +142,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
-        }
+}
