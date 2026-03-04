@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./AuthProvider";
 
 export default function AuthGuard({
@@ -13,12 +13,16 @@ export default function AuthGuard({
   const router = useRouter();
   const pathname = usePathname();
 
-  const publicRoutes = ["/login", "/register", "/auth/callback"];
+  const publicRoutes = ["/login", "/register"];
 
   useEffect(() => {
     if (!loading) {
       if (!user && !publicRoutes.includes(pathname)) {
         router.replace("/login");
+      }
+
+      if (user && pathname === "/login") {
+        router.replace("/");
       }
     }
   }, [user, loading, pathname, router]);
