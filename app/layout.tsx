@@ -4,21 +4,19 @@ import "./globals.css";
 
 import Navbar from "./components/Navbar";
 import AuthGuard from "./components/AuthGuard";
+import AuthProvider from "./components/AuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Monk OS",
   description: "JEE Advanced Execution System",
-  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
   themeColor: "#384D48",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
@@ -28,17 +26,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.className} bg-[#E2E2E2] antialiased min-h-screen`}
-      >
-        <AuthGuard>
-          <div className="max-w-[600px] mx-auto min-h-screen relative">
+      <body className={`${inter.className} bg-[#E2E2E2] min-h-screen`}>
+        <AuthProvider>
+          <AuthGuard>
             {children}
-
-            {/* Bottom Navbar */}
             <Navbar />
-          </div>
-        </AuthGuard>
+          </AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   );
