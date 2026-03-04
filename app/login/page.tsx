@@ -33,14 +33,18 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: "https://monkstudy.vercel.app",
-      },
-    });
-  };
+  const signInWithGoogle = async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    console.error(error);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#E2E2E2] px-4">
