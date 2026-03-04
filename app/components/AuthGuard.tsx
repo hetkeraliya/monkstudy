@@ -13,17 +13,14 @@ export default function AuthGuard({
   const router = useRouter();
   const pathname = usePathname();
 
-  const publicRoutes = ["/login", "/register"];
+  const publicRoutes = ["/login", "/register", "/auth/callback"];
 
   useEffect(() => {
-    if (!loading) {
-      if (!user && !publicRoutes.includes(pathname)) {
-        router.replace("/login");
-      }
+    if (!loading && !user && !publicRoutes.includes(pathname)) {
+      router.replace("/login");
     }
   }, [user, loading, pathname, router]);
 
-  // show spinner only while checking auth
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#E2E2E2]">
