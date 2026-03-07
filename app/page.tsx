@@ -77,12 +77,12 @@ export default function Dashboard() {
         </div>
 
         <button
-          onClick={() => setRunning(!running)}
-          className="w-full bg-white text-[#384D48] py-4 rounded-[20px] font-black flex items-center justify-center gap-2 active:scale-95 transition"
-        >
-          {running ? <Pause size={18} /> : <Play size={18} />}
-          {running ? "Pause Focus" : "Start Focus"}
-        </button>
+  onClick={() => router.push("/focus")}
+  className="w-full bg-white text-[#384D48] py-4 rounded-[20px] font-black flex items-center justify-center gap-2"
+>
+  <Play size={18} />
+  Start Focus
+</button>
 
       </div>
 
