@@ -3,6 +3,12 @@ import { persist } from "zustand/middleware";
 
 /* ================= TYPES ================= */
 
+export interface Session {
+  id: string;
+  minutes: number;
+  date: string;
+}
+
 export interface Mark {
   id: string;
   score: number;
@@ -26,7 +32,7 @@ export interface Chapter {
 
 export interface ScheduleItem {
   id: string;
-  task: string; // planner uses this
+  task: string;
   time: string;
   type:
     | "JEE"
@@ -41,7 +47,7 @@ export interface ScheduleItem {
 
 export interface TaskItem {
   id: string;
-  text: string; // tasks page uses this
+  text: string;
   priority: "High" | "Mid" | "Low";
   completed: boolean;
 }
@@ -62,12 +68,17 @@ interface MonkState {
   level: number;
   streak: number;
 
+  sessions: Session[];
+
   subjects: Subject[];
   schedule: ScheduleItem[];
   tasks: TaskItem[];
 
   /* XP */
   addXp: (amount: number) => void;
+
+  /* SESSIONS */
+  addSession: (minutes: number) => void;
 
   /* SUBJECT */
   addChapter: (subjectId: string, title: string) => void;
@@ -102,6 +113,8 @@ export const useStore = create<MonkState>()(
       xp: 0,
       level: 1,
       streak: 1,
+
+      sessions: [],
 
       subjects: [
         {
@@ -138,8 +151,26 @@ export const useStore = create<MonkState>()(
       addXp: (amount) => {
         const newXp = get().xp + amount;
         const newLevel = Math.floor(newXp / 100) + 1;
-        set({ xp: newXp, level: newLevel });
+
+        set({
+          xp: newXp,
+          level: newLevel,
+        });
       },
+
+      /* ================= SESSION ================= */
+
+      addSession: (minutes) =>
+        set((state) => ({
+          sessions: [
+            ...state.sessions,
+            {
+              id: crypto.randomUUID(),
+              minutes,
+              date: new Date().toISOString(),
+            },
+          ],
+        })),
 
       /* ================= SUBJECT ================= */
 
@@ -285,6 +316,7 @@ export const useStore = create<MonkState>()(
           xp: 0,
           level: 1,
           streak: 1,
+          sessions: [],
           subjects: [],
           schedule: [],
           tasks: [],
