@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,9 +21,29 @@ const navItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Hide navbar on auth pages
-  if (pathname === "/login" || pathname === "/register") {
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  // Hide navbar on auth pages, focus/pomodoro page, or when in fullscreen
+  if (
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/focus" ||
+    isFullscreen
+  ) {
     return null;
   }
 
@@ -120,4 +141,4 @@ export default function Navbar() {
       </div>
     </div>
   );
-}
+                          }
