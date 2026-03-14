@@ -6,7 +6,7 @@ import { persist } from "zustand/middleware";
 export interface Session {
   id: string;
   minutes: number;
-  date: string;
+  date: string; // ISO string — full timestamp
 }
 
 export interface Mark {
@@ -78,7 +78,7 @@ interface MonkState {
   addXp: (amount: number) => void;
 
   /* SESSIONS */
-  addSession: (minutes: number) => void;
+  addSession: (minutes: number, date?: string) => void;
 
   /* SUBJECT */
   addChapter: (subjectId: string, title: string) => void;
@@ -151,23 +151,20 @@ export const useStore = create<MonkState>()(
       addXp: (amount) => {
         const newXp = get().xp + amount;
         const newLevel = Math.floor(newXp / 100) + 1;
-
-        set({
-          xp: newXp,
-          level: newLevel,
-        });
+        set({ xp: newXp, level: newLevel });
       },
 
       /* ================= SESSION ================= */
 
-      addSession: (minutes) =>
+      // date param lets focus page pass the REAL start time ISO string
+      addSession: (minutes, date) =>
         set((state) => ({
           sessions: [
             ...state.sessions,
             {
               id: crypto.randomUUID(),
               minutes,
-              date: new Date().toISOString(),
+              date: date ?? new Date().toISOString(),
             },
           ],
         })),
@@ -327,3 +324,4 @@ export const useStore = create<MonkState>()(
     }
   )
 );
+                                       
