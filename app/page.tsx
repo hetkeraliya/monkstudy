@@ -4,14 +4,49 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
 import {
-  User, Play, Plus, Trash2, ChevronDown, ChevronUp,
-  Pencil, Check, X, Trophy, Calendar,
+  User, Play, Plus, Trash2,
+  Pencil, Check, X, Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-/* ══════════════════════════════════════════
-   TYPES
-══════════════════════════════════════════ */
+/* ── SVG tab icons (single color, theme-matched) ── */
+
+function IconBook({ color }: { color: string }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </svg>
+  );
+}
+
+function IconMedal({ color }: { color: string }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="6" />
+      <path d="M8.56 14.3L6 22l6-2 6 2-2.56-7.7" />
+    </svg>
+  );
+}
+
+function IconCalendar({ color }: { color: string }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
+
+function IconSave({ color }: { color: string }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
 
 type ExpandedSection = "chapters" | "marks" | "exams" | null;
 
@@ -35,10 +70,8 @@ export default function Dashboard() {
     checkDailyReset,
   } = useStore();
 
-  /* run daily reset check on mount */
   useEffect(() => { checkDailyReset(); }, []);
 
-  /* ── pomodoro display only ── */
   const [seconds, setSeconds] = useState(1500);
   const [running, setRunning] = useState(false);
 
@@ -62,7 +95,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#E2E2E2] px-5 pt-6 pb-32">
 
-      {/* ── Header ── */}
       <header className="flex justify-between items-center mb-8">
         <button
           onClick={() => router.push("/profile")}
@@ -74,7 +106,6 @@ export default function Dashboard() {
         <div className="w-12 h-12" />
       </header>
 
-      {/* ── Pomodoro card ── */}
       <div className="bg-[#384D48] text-white rounded-[28px] p-7 shadow-[0_8px_20px_rgba(0,0,0,0.08)] mb-10">
         <div className="text-center mb-6">
           <p className="text-sm font-bold text-[#ACAD94] uppercase tracking-widest">Deep Focus</p>
@@ -88,7 +119,6 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* ── Subject cards ── */}
       <div className="space-y-6">
         {subjects.map((subject) => (
           <SubjectCard
@@ -131,55 +161,54 @@ function SubjectCard({
   onRemoveExam: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState<ExpandedSection>(null);
-
   const toggle = (s: ExpandedSection) => setExpanded((prev) => (prev === s ? null : s));
 
   const total   = subject.chapters.length;
-  const done    = subject.chapters.filter((c: any) => c.completed).length;
-  const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+  const percent = total === 0 ? 0 : Math.round((subject.chapters.filter((c: any) => c.completed).length / total) * 100);
 
-  const hours = Math.floor(subject.dailyStudyMinutes / 60);
-  const mins  = subject.dailyStudyMinutes % 60;
+  const tabs: { key: ExpandedSection; Icon: (p: { color: string }) => JSX.Element; count: number; label: string }[] = [
+    { key: "chapters", Icon: IconBook,     count: total,                  label: "Chapters" },
+    { key: "marks",    Icon: IconMedal,    count: subject.marks.length,   label: "Marks"    },
+    { key: "exams",    Icon: IconCalendar, count: subject.exams.length,   label: "Exams"    },
+  ];
 
   return (
     <div className="bg-white rounded-[30px] p-6 shadow-[0_6px_18px_rgba(0,0,0,0.04)]">
 
-      {/* ── Card header ── */}
+      {/* header */}
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="text-2xl font-black text-[#384D48]">{subject.name}</h3>
-          <StudyTimeDisplay
-            minutes={subject.dailyStudyMinutes}
-            onSetMinutes={onSetMinutes}
-          />
+          <StudyTimeDisplay minutes={subject.dailyStudyMinutes} onSetMinutes={onSetMinutes} />
         </div>
         <span className="text-lg font-black text-[#ACAD94]">{percent}%</span>
       </div>
 
-      {/* ── Progress bar ── */}
+      {/* progress */}
       <div className="h-2 bg-[#F2F2F2] rounded-full mb-5 overflow-hidden">
-        <div
-          className="h-full bg-[#384D48] transition-all duration-500"
-          style={{ width: `${percent}%` }}
-        />
+        <div className="h-full bg-[#384D48] transition-all duration-500" style={{ width: `${percent}%` }} />
       </div>
 
-      {/* ── Section tabs ── */}
+      {/* tab row */}
       <div className="flex gap-2 mb-4">
-        {(["chapters","marks","exams"] as ExpandedSection[]).map((s) => (
-          <button
-            key={s}
-            onClick={() => toggle(s)}
-            className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition ${
-              expanded === s
-                ? "bg-[#384D48] text-white"
-                : "bg-[#F2F2F2] text-[#6E7271]"
-            }`}
-          >
-            {s === "chapters" ? `📖 ${total}` : s === "marks" ? `🏆 ${subject.marks.length}` : `📅 ${subject.exams.length}`}
-            <span className="ml-1 hidden sm:inline">{s}</span>
-          </button>
-        ))}
+        {tabs.map(({ key, Icon, count, label }) => {
+          const active = expanded === key;
+          const iconColor = active ? "#ffffff" : "#6E7271";
+          return (
+            <button
+              key={key}
+              onClick={() => toggle(key)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition active:scale-95 ${
+                active ? "bg-[#384D48] text-white" : "bg-[#F2F2F2] text-[#6E7271]"
+              }`}
+            >
+              <Icon color={iconColor} />
+              <span className={`text-[9px] font-black uppercase tracking-wide ${active ? "text-white" : "text-[#6E7271]"}`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Chapters panel ── */}
@@ -190,23 +219,24 @@ function SubjectCard({
             exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2 mb-3">
               {subject.chapters.length === 0 && (
-                <p className="text-[10px] text-[#ACAD94] text-center py-2 uppercase font-bold">No chapters yet</p>
+                <p className="text-[10px] text-[#ACAD94] text-center py-2 uppercase font-bold tracking-wider">No chapters yet</p>
               )}
               <AnimatePresence>
                 {subject.chapters.map((ch: any) => (
                   <motion.button
                     key={ch.id}
+                    layout
                     initial={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 40 }}
+                    exit={{ opacity: 0, x: 50, transition: { duration: 0.18 } }}
                     onClick={() => onRemoveChapter(ch.id)}
                     className="w-full flex items-center justify-between px-4 py-3 bg-[#F5F5F5] rounded-2xl active:scale-95 transition group"
                   >
-                    <span className="text-sm font-bold text-[#384D48] text-left">{ch.title}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[8px] text-[#ACAD94] font-bold uppercase opacity-0 group-active:opacity-100">Done +20XP</span>
-                      <Check size={15} className="text-[#ACAD94]" />
+                    <span className="text-sm font-bold text-[#384D48] text-left truncate pr-3">{ch.title}</span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-[8px] text-[#ACAD94] font-bold uppercase opacity-0 group-active:opacity-100 transition">+20xp</span>
+                      <IconSave color="#ACAD94" />
                     </div>
                   </motion.button>
                 ))}
@@ -226,24 +256,24 @@ function SubjectCard({
             exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2 mb-3">
               {subject.marks.length === 0 && (
-                <p className="text-[10px] text-[#ACAD94] text-center py-2 uppercase font-bold">No marks recorded</p>
+                <p className="text-[10px] text-[#ACAD94] text-center py-2 uppercase font-bold tracking-wider">No marks recorded</p>
               )}
               {subject.marks.map((m: any, i: number) => {
-                const pct = Math.round((m.score / (m.total || 100)) * 100);
+                const pct = Math.round((m.score / (m.total || 300)) * 100);
                 return (
                   <div key={m.id} className="flex items-center justify-between px-4 py-2.5 bg-[#F5F5F5] rounded-2xl">
-                    <div>
+                    <div className="flex flex-col">
                       <span className="text-xs font-black text-[#384D48]">Test {i + 1}</span>
-                      <span className="text-[10px] text-[#6E7271] ml-2">{m.score}/{m.total}</span>
+                      <span className="text-[10px] text-[#6E7271] font-bold">{m.score} / {m.total}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-sm font-black ${pct >= 60 ? "text-[#384D48]" : "text-[#ACAD94]"}`}>
+                      <span className={`text-sm font-black ${pct >= 50 ? "text-[#384D48]" : "text-[#ACAD94]"}`}>
                         {pct}%
                       </span>
-                      <button onClick={() => onRemoveMark(m.id)} className="text-[#D8D4D5] active:text-red-400">
-                        <Trash2 size={13} />
+                      <button onClick={() => onRemoveMark(m.id)} className="text-[#D8D4D5] active:text-[#384D48] transition">
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -263,12 +293,14 @@ function SubjectCard({
             exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2 mb-3">
               {subject.exams.length === 0 && (
-                <p className="text-[10px] text-[#ACAD94] text-center py-2 uppercase font-bold">No exams added</p>
+                <p className="text-[10px] text-[#ACAD94] text-center py-2 uppercase font-bold tracking-wider">No exams added</p>
               )}
               {subject.exams.map((ex: any) => {
-                const days = Math.ceil((new Date(ex.date).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
+                const days = Math.ceil(
+                  (new Date(ex.date).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000
+                );
                 const countdown = days > 0 ? `${days}d` : days === 0 ? "Today" : "Passed";
                 return (
                   <div
@@ -276,14 +308,14 @@ function SubjectCard({
                     className="flex items-center justify-between px-4 py-2.5 bg-[#F5F5F5] rounded-2xl border-l-4"
                     style={{ borderLeftColor: ex.type === "High" ? "#384D48" : ex.type === "Medium" ? "#ACAD94" : "#6E7271" }}
                   >
-                    <div>
-                      <p className="text-xs font-black text-[#384D48]">{ex.title}</p>
+                    <div className="flex flex-col min-w-0 pr-3">
+                      <p className="text-xs font-black text-[#384D48] truncate">{ex.title}</p>
                       <p className="text-[9px] text-[#6E7271] font-bold uppercase">{ex.type} · {ex.date}</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-shrink-0">
                       <span className="text-sm font-black text-[#384D48]">{countdown}</span>
-                      <button onClick={() => onRemoveExam(ex.id)} className="text-[#D8D4D5] active:text-red-400">
-                        <Trash2 size={13} />
+                      <button onClick={() => onRemoveExam(ex.id)} className="text-[#D8D4D5] active:text-[#384D48] transition">
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -340,13 +372,8 @@ function StudyTimeDisplay({ minutes, onSetMinutes }: { minutes: number; onSetMin
   }
 
   return (
-    <button
-      onClick={() => setEditing(true)}
-      className="flex items-center gap-1 mt-1 group"
-    >
-      <p className="text-sm text-[#6E7271] font-bold">
-        {hours}h {mins}m today
-      </p>
+    <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 mt-1 group">
+      <p className="text-sm text-[#6E7271] font-bold">{hours}h {mins}m today</p>
       <Pencil size={11} className="text-[#ACAD94] opacity-0 group-hover:opacity-100 transition" />
     </button>
   );
@@ -359,17 +386,17 @@ function StudyTimeDisplay({ minutes, onSetMinutes }: { minutes: number; onSetMin
 function AddChapterRow({ onAdd }: { onAdd: (t: string) => void }) {
   const [val, setVal] = useState("");
   return (
-    <div className="flex gap-2 mb-3">
+    <div className="flex gap-2 mb-2">
       <input
         value={val}
         onChange={(e) => setVal(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && val.trim()) { onAdd(val); setVal(""); } }}
         placeholder="Add chapter..."
-        className="flex-1 bg-[#F2F2F2] rounded-[16px] px-4 py-2.5 outline-none text-sm text-[#384D48] font-medium"
+        className="flex-1 min-w-0 bg-[#F2F2F2] rounded-[16px] px-4 py-2.5 outline-none text-sm text-[#384D48] font-medium"
       />
       <button
         onClick={() => { if (val.trim()) { onAdd(val); setVal(""); } }}
-        className="w-10 h-10 bg-[#384D48] text-white rounded-[14px] flex items-center justify-center active:scale-95 transition"
+        className="w-10 h-10 flex-shrink-0 bg-[#384D48] text-white rounded-[14px] flex items-center justify-center active:scale-95 transition"
       >
         <Plus size={18} />
       </button>
@@ -380,17 +407,17 @@ function AddChapterRow({ onAdd }: { onAdd: (t: string) => void }) {
 function AddMinutesRow({ onLog }: { onLog: (m: number) => void }) {
   const [val, setVal] = useState("");
   return (
-    <div className="flex gap-2 mb-3">
+    <div className="flex gap-2 mb-2">
       <input
         type="number"
         value={val}
         onChange={(e) => setVal(e.target.value)}
         placeholder="Log study minutes..."
-        className="flex-1 bg-[#F2F2F2] rounded-[16px] px-4 py-2.5 outline-none text-sm text-[#384D48] font-medium"
+        className="flex-1 min-w-0 bg-[#F2F2F2] rounded-[16px] px-4 py-2.5 outline-none text-sm text-[#384D48] font-medium"
       />
       <button
         onClick={() => { if (val) { onLog(parseInt(val)); setVal(""); } }}
-        className="w-10 h-10 bg-[#ACAD94] text-white rounded-[14px] flex items-center justify-center active:scale-95 transition text-xs font-black"
+        className="w-10 h-10 flex-shrink-0 bg-[#ACAD94] text-white rounded-[14px] flex items-center justify-center active:scale-95 transition font-black text-base"
       >
         +
       </button>
@@ -400,62 +427,77 @@ function AddMinutesRow({ onLog }: { onLog: (m: number) => void }) {
 
 function AddMarkRow({ onAdd }: { onAdd: (m: any) => void }) {
   const [score, setScore] = useState("");
-  const [total, setTotal] = useState("");
+  const [total, setTotal] = useState("300");
 
   const submit = () => {
     const s = parseInt(score);
-    const t = parseInt(total) || 100;
-    if (!isNaN(s)) {
-      onAdd({ id: crypto.randomUUID(), score: s, total: t, date: new Date().toISOString() });
-      setScore(""); setTotal("");
-    }
+    const t = parseInt(total) || 300;
+    if (isNaN(s) || s < 0 || s > t) return;
+    onAdd({ id: crypto.randomUUID(), score: s, total: t, date: new Date().toISOString() });
+    setScore("");
+    setTotal("300");
   };
 
   return (
-    <div className="flex gap-2 mb-3">
-      <input
-        type="number"
-        value={score}
-        onChange={(e) => setScore(e.target.value)}
-        placeholder="Score"
-        className="flex-1 bg-[#F2F2F2] rounded-[16px] px-3 py-2.5 outline-none text-sm text-[#384D48] font-medium"
-      />
-      <input
-        type="number"
-        value={total}
-        onChange={(e) => setTotal(e.target.value)}
-        placeholder="Out of"
-        className="flex-1 bg-[#F2F2F2] rounded-[16px] px-3 py-2.5 outline-none text-sm text-[#384D48] font-medium"
-      />
+    <div className="bg-[#F5F5F5] rounded-2xl p-3 mb-2 space-y-2">
+      <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest">Add Score</p>
+
+      {/* score input — full width */}
+      <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-2">
+        <span className="text-[10px] font-bold text-[#ACAD94] w-10 flex-shrink-0">Score</span>
+        <input
+          type="number"
+          value={score}
+          min={0}
+          max={300}
+          onChange={(e) => {
+            const v = Math.min(300, Math.max(0, parseInt(e.target.value) || 0));
+            setScore(String(v));
+          }}
+          placeholder="0 – 300"
+          className="flex-1 min-w-0 bg-transparent outline-none text-sm font-bold text-[#384D48]"
+        />
+      </div>
+
+      {/* out of input — full width */}
+      <div className="flex items-center gap-2 bg-white rounded-xl px-3 py-2">
+        <span className="text-[10px] font-bold text-[#ACAD94] w-10 flex-shrink-0">Out of</span>
+        <input
+          type="number"
+          value={total}
+          min={1}
+          max={300}
+          onChange={(e) => {
+            const v = Math.min(300, Math.max(1, parseInt(e.target.value) || 300));
+            setTotal(String(v));
+          }}
+          className="flex-1 min-w-0 bg-transparent outline-none text-sm font-bold text-[#384D48]"
+        />
+      </div>
+
       <button
         onClick={submit}
-        className="w-10 h-10 bg-[#384D48] text-white rounded-[14px] flex items-center justify-center active:scale-95 transition"
+        className="w-full bg-[#384D48] text-white rounded-xl py-2.5 text-[11px] font-black uppercase tracking-wider active:scale-95 transition"
       >
-        <Trophy size={14} />
+        Save Score
       </button>
     </div>
   );
 }
 
 function AddExamRow({ onAdd }: { onAdd: (e: any) => void }) {
-  const [title, setTitle]     = useState("");
-  const [date, setDate]       = useState("");
+  const [title, setTitle]       = useState("");
+  const [date, setDate]         = useState("");
   const [priority, setPriority] = useState<"High"|"Medium"|"Low">("High");
 
   const submit = () => {
     if (!title.trim() || !date) return;
-    onAdd({
-      id: crypto.randomUUID(),
-      title,
-      date,
-      type: priority,
-      marks: [],
-    });
+    onAdd({ id: crypto.randomUUID(), title, date, type: priority, marks: [] });
     setTitle(""); setDate("");
   };
 
   return (
-    <div className="space-y-2 mb-3">
+    <div className="space-y-2 mb-2">
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -467,12 +509,12 @@ function AddExamRow({ onAdd }: { onAdd: (e: any) => void }) {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="flex-1 bg-[#F2F2F2] rounded-[16px] px-3 py-2.5 outline-none text-sm text-[#384D48] font-medium"
+          className="flex-1 min-w-0 bg-[#F2F2F2] rounded-[16px] px-3 py-2.5 outline-none text-sm text-[#384D48] font-medium"
         />
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value as any)}
-          className="flex-1 bg-[#F2F2F2] rounded-[16px] px-3 py-2.5 outline-none text-[10px] font-black uppercase text-[#384D48]"
+          className="w-24 flex-shrink-0 bg-[#F2F2F2] rounded-[16px] px-2 py-2.5 outline-none text-[10px] font-black uppercase text-[#384D48]"
         >
           <option value="High">High</option>
           <option value="Medium">Medium</option>
@@ -480,7 +522,7 @@ function AddExamRow({ onAdd }: { onAdd: (e: any) => void }) {
         </select>
         <button
           onClick={submit}
-          className="w-10 h-10 bg-[#384D48] text-white rounded-[14px] flex items-center justify-center active:scale-95 transition"
+          className="w-10 h-10 flex-shrink-0 bg-[#384D48] text-white rounded-[14px] flex items-center justify-center active:scale-95 transition"
         >
           <Calendar size={14} />
         </button>
