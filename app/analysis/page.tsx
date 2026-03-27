@@ -1,277 +1,277 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Clock, Flame, BookOpen, Download, Trophy,
-  Zap, Target, TrendingUp, Calendar, Trash2,
-} from "lucide-react";
+import { TrendingUp, Trash2, Clock, Calendar, Flame, Target, ChevronLeft, ChevronRight, BookOpen, Coffee } from "lucide-react";
 import { useStore, Exam, Mark } from "../../store/useStore";
 import { vibrate } from "../../lib/db";
 
-/* ══════════════════════════════════════════
+/* ══════════════════════════════════
    HELPERS
-══════════════════════════════════════════ */
-
+══════════════════════════════════ */
 const toKey = (d: Date) => d.toISOString().slice(0, 10);
-const fmtH  = (m: number) => `${(m / 60).toFixed(1)}h`;
+const todayKey = () => toKey(new Date());
+const fmtH = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
+const fmtHShort = (m: number) => `${(m / 60).toFixed(1)}h`;
+const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const MONTH_NAMES = ["January","February","March","April","May","June",
+                     "July","August","September","October","November","December"];
 
-const startOfWeek = (d: Date) => {
-  const c = new Date(d);
-  c.setDate(c.getDate() - c.getDay());
-  c.setHours(0, 0, 0, 0);
-  return c;
-};
+/* ══════════════════════════════════
+   DONUT (Today's focus vs break)
+══════════════════════════════════ */
+function Donut({ pct, size = 56, stroke = 10, color }: {
+  pct: number; size?: number; stroke?: number; color: string;
+}) {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none"
+        stroke="#E2E2E2" strokeWidth={stroke}/>
+      <circle cx={size/2} cy={size/2} r={r} fill="none"
+        stroke={color} strokeWidth={stroke}
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%",
+                 transition: "stroke-dashoffset 0.8s ease" }}/>
+    </svg>
+  );
+}
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const DAYS   = ["S","M","T","W","T","F","S"];
-
-/* ══════════════════════════════════════════
-   DONUT CHART  (uses site palette)
-══════════════════════════════════════════ */
-
-interface Slice { label: string; value: number; color: string }
-
-function DonutChart({ slices }: { slices: Slice[] }) {
-  const total = slices.reduce((a, s) => a + s.value, 0) || 1;
-  const R = 44; const C = 58;
-  const circ = 2 * Math.PI * R;
-  let cumulative = 0;
+/* ══════════════════════════════════
+   WEEKLY BAR CHART
+══════════════════════════════════ */
+function WeekBars({ byDay }: { byDay: Record<string, number> }) {
+  const today = new Date();
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (6 - i));
+    const k = toKey(d);
+    return { label: DAY_LABELS[d.getDay()], mins: byDay[k] ?? 0, key: k, isToday: k === todayKey() };
+  });
+  const max = Math.max(...days.map(d => d.mins), 60);
 
   return (
-    <div className="flex items-center gap-4 w-full">
-      <div className="flex-shrink-0">
-        <svg width={C * 2} height={C * 2} viewBox={`0 0 ${C*2} ${C*2}`}>
-          <circle cx={C} cy={C} r={R} fill="none" stroke="#E2E2E2" strokeWidth="18" />
-          {slices.map((s, i) => {
-            const dash = (s.value / total) * circ;
-            const gap  = circ - dash;
-            const rot  = (cumulative / total) * 360 - 90;
-            cumulative += s.value;
-            return (
-              <circle
-                key={i} cx={C} cy={C} r={R}
-                fill="none" stroke={s.color} strokeWidth="18"
-                strokeDasharray={`${dash} ${gap}`}
-                style={{ transform: `rotate(${rot}deg)`, transformOrigin: `${C}px ${C}px` }}
-              />
-            );
-          })}
-          <circle cx={C} cy={C} r={R - 11} fill="white" />
-        </svg>
-      </div>
-      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-        {slices.map((s, i) => (
-          <div key={i} className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
-              <span className="text-[10px] font-bold text-[#384D48] truncate">{s.label}</span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <span className="text-[10px] font-black text-[#384D48]">{fmtH(s.value)}</span>
-              <span className="text-[9px] text-[#6E7271] w-6 text-right">{Math.round((s.value/total)*100)}%</span>
-            </div>
-          </div>
-        ))}
-      </div>
+    <div className="flex items-end gap-1.5 h-16">
+      {days.map((d, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: `${Math.max((d.mins / max) * 52, d.mins > 0 ? 4 : 0)}px` }}
+            transition={{ duration: 0.5, delay: i * 0.05 }}
+            className="w-full rounded-t-md"
+            style={{ backgroundColor: d.isToday ? "#384D48" : d.mins > 0 ? "#ACAD94" : "#E2E2E2" }}
+          />
+          <span className={`text-[8px] font-bold ${d.isToday ? "text-[#384D48]" : "text-[#6E7271]"}`}>
+            {d.label}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
 
-/* ══════════════════════════════════════════
-   HEATMAP  (GitHub-style, full year)
-   Uses site greens: light → #384D48
-══════════════════════════════════════════ */
-
-function Heatmap({ byDay }: { byDay: Record<string, number> }) {
+/* ══════════════════════════════════
+   MONTHLY CALENDAR
+══════════════════════════════════ */
+function MonthCalendar({ byDay, selectedKey, onSelect }: {
+  byDay: Record<string, number>;
+  selectedKey: string;
+  onSelect: (k: string) => void;
+}) {
+  const [viewDate, setViewDate] = useState(new Date());
   const today = new Date(); today.setHours(0,0,0,0);
 
-  const gridStart = new Date(today);
-  gridStart.setDate(gridStart.getDate() - 364);
-  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+  const year  = viewDate.getFullYear();
+  const month = viewDate.getMonth();
 
-  const weeks: Date[][] = [];
-  const cur = new Date(gridStart);
-  while (cur <= today) {
-    const wk: Date[] = [];
-    for (let d = 0; d < 7; d++) { wk.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
-    weeks.push(wk);
-  }
+  // First day of month, how many days
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const maxMins = Math.max(...Object.values(byDay), 1);
-  const color = (m: number) => {
-    if (!m) return "#E2E2E2";
-    const t = m / maxMins;
-    if (t < 0.25) return "#ACAD94";
-    if (t < 0.50) return "#6E7271";
-    if (t < 0.75) return "#4E6B5E";
+  const getColor = (mins: number) => {
+    if (!mins) return null;
+    if (mins < 60)  return "#ACAD94";
+    if (mins < 120) return "#6E7271";
+    if (mins < 180) return "#4E6B5E";
     return "#384D48";
   };
 
-  const monthLabels: { wi: number; label: string }[] = [];
-  weeks.forEach((wk, wi) => {
-    if (wk[0].getDate() <= 7)
-      monthLabels.push({ wi, label: MONTHS[wk[0].getMonth()] });
-  });
-
-  const CELL = 9; const GAP = 2;
+  const cells: (Date | null)[] = [
+    ...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1))
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <div style={{ minWidth: weeks.length * (CELL + GAP) + 20 }}>
-        {/* month labels */}
-        <div className="flex mb-0.5" style={{ paddingLeft: 18 }}>
-          {weeks.map((_, wi) => {
-            const ml = monthLabels.find(m => m.wi === wi);
-            return (
-              <div key={wi} style={{ width: CELL+GAP, flexShrink: 0 }}
-                   className="text-[6px] font-bold text-[#6E7271] leading-none">
-                {ml?.label ?? ""}
+    <div>
+      {/* Month nav */}
+      <div className="flex justify-between items-center mb-3">
+        <button onClick={() => setViewDate(new Date(year, month - 1, 1))}
+          className="w-7 h-7 rounded-lg bg-[#F2F2F2] flex items-center justify-center active:scale-90 transition">
+          <ChevronLeft size={14} className="text-[#384D48]"/>
+        </button>
+        <span className="text-xs font-black text-[#384D48]">
+          {MONTH_NAMES[month]} {year}
+        </span>
+        <button onClick={() => {
+          const next = new Date(year, month + 1, 1);
+          if (next <= today) setViewDate(next);
+        }} className="w-7 h-7 rounded-lg bg-[#F2F2F2] flex items-center justify-center active:scale-90 transition">
+          <ChevronRight size={14} className="text-[#384D48]"/>
+        </button>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 mb-1">
+        {DAY_LABELS.map(d => (
+          <div key={d} className="text-center text-[8px] font-bold text-[#ACAD94]">{d}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-y-1">
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} />;
+          const k   = toKey(d);
+          const mins = byDay[k] ?? 0;
+          const color = getColor(mins);
+          const isTod = k === todayKey();
+          const isSel = k === selectedKey;
+          const isFut = d > today;
+
+          return (
+            <button
+              key={i}
+              onClick={() => { if (!isFut) { vibrate(10); onSelect(k); } }}
+              disabled={isFut}
+              className="flex items-center justify-center"
+            >
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-bold transition
+                ${isSel ? "ring-2 ring-[#384D48] ring-offset-1" : ""}
+                ${isFut ? "opacity-25" : ""}
+              `}
+              style={{
+                backgroundColor: color ?? (isTod ? "#E8EDE8" : "transparent"),
+                color: color ? "#FFFFFF" : isTod ? "#384D48" : "#384D48",
+              }}>
+                {d.getDate()}
               </div>
-            );
-          })}
-        </div>
-        <div className="flex">
-          {/* day labels */}
-          <div className="flex flex-col mr-0.5" style={{ gap: GAP }}>
-            {DAYS.map((d, i) => (
-              <div key={i} style={{ width: 16, height: CELL }}
-                   className="text-[6px] text-[#6E7271] flex items-center justify-end pr-0.5">
-                {i % 2 === 1 ? d : ""}
-              </div>
-            ))}
-          </div>
-          {/* cells */}
-          <div className="flex" style={{ gap: GAP }}>
-            {weeks.map((wk, wi) => (
-              <div key={wi} className="flex flex-col" style={{ gap: GAP }}>
-                {wk.map((day, di) => {
-                  const k    = toKey(day);
-                  const mins = byDay[k] ?? 0;
-                  const future = day > today;
-                  return (
-                    <div key={di} style={{
-                      width: CELL, height: CELL, borderRadius: 2,
-                      backgroundColor: future ? "transparent" : color(mins),
-                    }} />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* legend */}
-        <div className="flex items-center gap-1 mt-1.5 justify-end">
-          <span className="text-[6px] text-[#6E7271]">Less</span>
-          {["#E2E2E2","#ACAD94","#6E7271","#4E6B5E","#384D48"].map((c,i) => (
-            <div key={i} style={{ width: CELL, height: CELL, backgroundColor: c, borderRadius: 2 }} />
-          ))}
-          <span className="text-[6px] text-[#6E7271]">More</span>
-        </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-2 mt-3 justify-end">
+        <span className="text-[7px] text-[#6E7271]">Low</span>
+        {[null, "#ACAD94","#6E7271","#4E6B5E","#384D48"].map((c, i) => (
+          <div key={i} style={{
+            width: 10, height: 10, borderRadius: 3,
+            backgroundColor: c ?? "#E2E2E2"
+          }}/>
+        ))}
+        <span className="text-[7px] text-[#6E7271]">High</span>
       </div>
     </div>
   );
 }
 
-/* ══════════════════════════════════════════
-   STAT TILE  (white card, site colors)
-══════════════════════════════════════════ */
-
-function Tile({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
-  return (
-    <div className="bg-[#F5F5F5] rounded-2xl p-3 flex flex-col gap-1">
-      <Icon size={13} className="text-[#ACAD94]" />
-      <p className="text-[7px] font-bold text-[#6E7271] uppercase tracking-wider leading-none mt-0.5">{label}</p>
-      <p className="text-sm font-black text-[#384D48] leading-tight">{value}</p>
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════
+/* ══════════════════════════════════
    MAIN PAGE
-══════════════════════════════════════════ */
-
+══════════════════════════════════ */
 export default function Analysis() {
-  const [mounted, setMounted]   = useState(false);
-  const [year, setYear]         = useState(new Date().getFullYear());
-  const [downloading, setDl]    = useState(false);
-  const [markTooltip, setMT]    = useState<{x:number;y:number;label:string;val:number}|null>(null);
-
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted]     = useState(false);
+  const [selectedDay, setSelectedDay] = useState(todayKey());
   const { subjects, sessions, updateSubject } = useStore();
 
   useEffect(() => { setMounted(true); }, []);
 
-  /* year sessions */
-  const yearSessions = useMemo(
-    () => sessions.filter(s => new Date(s.date).getFullYear() === year),
-    [sessions, year]
-  );
-
   /* sessions by day */
   const byDay = useMemo(() => {
-    const m: Record<string,number> = {};
-    yearSessions.forEach(s => { const k = toKey(new Date(s.date)); m[k]=(m[k]??0)+s.minutes; });
+    const m: Record<string, number> = {};
+    sessions.forEach(s => {
+      const k = toKey(new Date(s.date));
+      m[k] = (m[k] ?? 0) + s.minutes;
+    });
     return m;
-  }, [yearSessions]);
+  }, [sessions]);
 
-  /* yearly stats */
-  const stats = useMemo(() => {
-    if (!yearSessions.length) return null;
-    const totalMins  = yearSessions.reduce((a,s) => a+s.minutes, 0);
-    const totalSess  = yearSessions.length;
-    const avgSession = totalMins / totalSess;
-    const focusDays  = Object.keys(byDay).length;
+  /* today stats */
+  const todayMins  = byDay[todayKey()] ?? 0;
+  const todayGoal  = 8 * 60; // 8h goal
+  const todayPct   = Math.min(100, Math.round((todayMins / todayGoal) * 100));
 
-    const bestDayMins = Math.max(...Object.values(byDay), 0);
+  /* total study vs break (estimate break as 15% of study) */
+  const breakMins  = Math.round(todayMins * 0.15);
+  const focusPct   = todayMins > 0
+    ? Math.round((todayMins / (todayMins + breakMins)) * 100)
+    : 0;
 
-    const weekMap: Record<string,number> = {};
-    yearSessions.forEach(s => {
-      const k = toKey(startOfWeek(new Date(s.date)));
-      weekMap[k] = (weekMap[k]??0)+s.minutes;
-    });
-    const bestWeekMins = Math.max(...Object.values(weekMap), 0);
+  /* this week */
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay());
+  weekStart.setHours(0,0,0,0);
 
-    const monthMap: Record<string,number> = {};
-    yearSessions.forEach(s => {
-      const d = new Date(s.date);
-      const k = `${d.getFullYear()}-${d.getMonth()}`;
-      monthMap[k] = (monthMap[k]??0)+s.minutes;
-    });
-    const bestMonthMins = Math.max(...Object.values(monthMap), 0);
+  const weekSessions = sessions.filter(s => new Date(s.date) >= weekStart);
+  const weekStudyMins = weekSessions.reduce((a, s) => a + s.minutes, 0);
+  const weekActiveDays = new Set(weekSessions.map(s => toKey(new Date(s.date)))).size;
+  const weekBreakMins = Math.round(weekStudyMins * 0.15);
 
-    // streak up to today
+  /* best day this week */
+  const weekDayMins: Record<string, number> = {};
+  weekSessions.forEach(s => {
+    const k = toKey(new Date(s.date));
+    weekDayMins[k] = (weekDayMins[k] ?? 0) + s.minutes;
+  });
+  const bestDayKey = Object.entries(weekDayMins).sort((a,b) => b[1]-a[1])[0]?.[0];
+  const bestDayLabel = bestDayKey
+    ? DAY_LABELS[new Date(bestDayKey).getDay()]
+    : "—";
+
+  /* focus score (ratio of days with 2h+ study this week) */
+  const focusScore = weekActiveDays === 0 ? 0
+    : Math.round((Object.values(weekDayMins).filter(m => m >= 120).length / 7) * 100);
+
+  /* streak */
+  const streak = useMemo(() => {
     const daySet = new Set(Object.keys(byDay));
-    let streak = 0;
+    let s = 0;
     const c = new Date(); c.setHours(0,0,0,0);
-    while (daySet.has(toKey(c))) { streak++; c.setDate(c.getDate()-1); }
+    while (daySet.has(toKey(c))) { s++; c.setDate(c.getDate()-1); }
+    return s;
+  }, [byDay]);
 
-    return { totalMins, totalSess, avgSession, focusDays, bestDayMins, bestWeekMins, bestMonthMins, streak };
-  }, [yearSessions, byDay]);
+  /* this month */
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthSessions = sessions.filter(s => new Date(s.date) >= monthStart);
+  const monthMins  = monthSessions.reduce((a, s) => a + s.minutes, 0);
+  const totalSessions = monthSessions.length;
+  const avgDaily   = monthMins / Math.max(1, now.getDate());
 
-  /* subject slices */
-  const SLICE_COLORS = ["#384D48","#ACAD94","#6E7271","#4E6B5E","#8FA89B"];
-  const slices = useMemo<Slice[]>(() =>
-    subjects
-      .map((sub, i) => ({ label: sub.name, value: sub.dailyStudyMinutes, color: SLICE_COLORS[i % SLICE_COLORS.length] }))
-      .filter(s => s.value > 0),
-    [subjects]
-  );
+  /* selected day detail */
+  const selMins = byDay[selectedDay] ?? 0;
+  const selBreak = Math.round(selMins * 0.15);
+  const selFocus = selMins > 0 ? Math.round((selMins / (selMins + selBreak)) * 100) : 0;
+  const selDate  = new Date(selectedDay + "T00:00:00");
+  const selLabel = selDate.toLocaleDateString("en-IN", { weekday:"short", day:"numeric", month:"short" });
 
   /* marks trend */
-  const GW = 280; const GH = 100;
+  const GW = 260; const GH = 80;
   const markDS = useMemo(() => {
     const cfg = [
-      { id:"physics",   name:"Physics",   color:"#384D48" },
-      { id:"chemistry", name:"Chemistry", color:"#ACAD94" },
-      { id:"maths",     name:"Maths",     color:"#6E7271" },
+      { id:"physics",   name:"Phy", color:"#384D48" },
+      { id:"chemistry", name:"Chem", color:"#ACAD94" },
+      { id:"maths",     name:"Math", color:"#6E7271" },
     ];
     return cfg.map(conf => {
-      const marks = (subjects.find(s=>s.id===conf.id)?.marks??[]) as Mark[];
+      const marks = (subjects.find(s => s.id === conf.id)?.marks ?? []) as Mark[];
       if (!marks.length) return { ...conf, path:"", points:[] };
       const pts = marks.map((m,i) => {
         const x   = marks.length===1 ? GW/2 : (i/(marks.length-1))*GW;
-        const pct = Math.round((m.score/(m.total||100))*100);
+        const pct = Math.round((m.score/(m.total||300))*100);
         return { x, y: GH-(pct/100)*GH, val:pct, label:`${conf.name} T${i+1}` };
       });
       return { ...conf, path: pts.map(p=>`${p.x},${p.y}`).join(" "), points:pts };
@@ -281,11 +281,10 @@ export default function Analysis() {
   /* exams */
   const allExams = useMemo(() =>
     subjects.flatMap(sub =>
-      ((sub.exams||[]) as Exam[]).map(ex=>({...ex, subjectId:sub.id, subjectName:sub.name}))
+      ((sub.exams||[]) as Exam[]).map(ex=>({...ex,subjectId:sub.id,subjectName:sub.name}))
     ).sort((a,b)=>new Date(a.date).getTime()-new Date(b.date).getTime()),
     [subjects]
   );
-
   const countdown = (date: string) => {
     const d=new Date(date); d.setHours(0,0,0,0);
     const n=new Date();     n.setHours(0,0,0,0);
@@ -293,203 +292,263 @@ export default function Analysis() {
     return days>0?`${days}d`:days===0?"Today":"Passed";
   };
 
-  /* download — screenshot the card with site bg colors */
-  const handleDownload = useCallback(async () => {
-    if (!cardRef.current||downloading) return;
-    vibrate(30); setDl(true);
-    try {
-      const h2c = (await import("html2canvas")).default;
-      const canvas = await h2c(cardRef.current, {
-        backgroundColor: "#E2E2E2",
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      });
-      const a = document.createElement("a");
-      a.download = `monkstudy-${year}.png`;
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    } finally { setDl(false); }
-  }, [year, downloading]);
-
   if (!mounted) return null;
 
   return (
-    <div className="space-y-5 pb-36 max-w-md mx-auto p-4 bg-[#E2E2E2] min-h-screen">
+    <div className="pb-36 max-w-md mx-auto bg-[#E2E2E2] min-h-screen">
 
       {/* ── Header ── */}
-      <header className="pt-2 flex justify-between items-center px-1">
-        <div>
-          <h1 className="text-xl font-black text-[#384D48] tracking-tighter uppercase">Intelligence</h1>
-          <p className="text-[8px] text-[#6E7271] font-bold uppercase tracking-[0.2em]">Data Analysis Engine</p>
-        </div>
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="flex items-center gap-1.5 bg-[#384D48] text-white text-[10px] font-black px-3 py-2 rounded-xl active:scale-95 transition disabled:opacity-60"
-        >
-          <Download size={12} />
-          {downloading ? "Saving…" : "Export"}
-        </button>
-      </header>
-
-      {/* ══════════════════════════════
-          DOWNLOADABLE CARD
-      ══════════════════════════════ */}
-      <div ref={cardRef} className="space-y-4 bg-[#E2E2E2] rounded-[28px] p-1">
-
-        {/* Year picker */}
-        <div className="flex justify-between items-center bg-white rounded-[20px] px-4 py-3 shadow-sm">
-          <p className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest">Yearly Stats</p>
-          <div className="flex items-center gap-2">
-            <button onClick={()=>setYear(y=>y-1)}
-              className="w-7 h-7 rounded-lg bg-[#E2E2E2] text-[#384D48] font-black flex items-center justify-center text-sm">
-              ‹
-            </button>
-            <span className="text-xs font-black text-[#384D48]">{year}</span>
-            <button onClick={()=>setYear(y=>Math.min(y+1,new Date().getFullYear()))}
-              className="w-7 h-7 rounded-lg bg-[#E2E2E2] text-[#384D48] font-black flex items-center justify-center text-sm">
-              ›
-            </button>
-          </div>
-        </div>
-
-        {/* Stats 2×4 grid */}
-        {stats ? (
-          <div className="grid grid-cols-2 gap-2.5">
-            <Tile icon={Clock}      label="Focus Time"   value={fmtH(stats.totalMins)} />
-            <Tile icon={Zap}        label="Sessions"     value={String(stats.totalSess)} />
-            <Tile icon={Calendar}   label="Focus Days"   value={String(stats.focusDays)} />
-            <Tile icon={Target}     label="Avg Session"  value={fmtH(stats.avgSession)} />
-            <Tile icon={Trophy}     label="Best Day"     value={fmtH(stats.bestDayMins)} />
-            <Tile icon={TrendingUp} label="Best Week"    value={fmtH(stats.bestWeekMins)} />
-            <Tile icon={BookOpen}   label="Best Month"   value={fmtH(stats.bestMonthMins)} />
-            <Tile icon={Flame}      label="Best Streak"  value={`${stats.streak} days`} />
-          </div>
-        ) : (
-          <div className="bg-white rounded-[20px] p-8 text-center shadow-sm border-2 border-dashed border-[#D8D4D5]">
-            <Clock size={22} className="mx-auto text-[#D8D4D5] mb-2" />
-            <p className="text-[9px] font-bold text-[#6E7271] uppercase tracking-widest">No sessions in {year}</p>
-          </div>
-        )}
-
-        {/* Subject breakdown donut */}
-        {slices.length > 0 && (
-          <div className="bg-white rounded-[20px] p-4 shadow-sm">
-            <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest mb-3">Subject Breakdown</p>
-            <DonutChart slices={slices} />
-          </div>
-        )}
-
-        {/* Activity heatmap */}
-        <div className="bg-white rounded-[20px] p-4 shadow-sm">
-          <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest mb-3">
-            Activity · {year}
-          </p>
-          <Heatmap byDay={byDay} />
-        </div>
-
+      <div className="px-4 pt-6 pb-2">
+        <h1 className="text-xl font-black text-[#384D48] tracking-tighter uppercase">Intelligence</h1>
+        <p className="text-[8px] text-[#6E7271] font-bold uppercase tracking-[0.2em]">Progress Tracker</p>
       </div>
-      {/* ══ end downloadable card ══ */}
 
-      {/* Score trend */}
-      <section className="bg-white p-5 rounded-[24px] shadow-sm border border-[#D8D4D5]">
-        <div className="flex items-center gap-2 mb-3">
-          <TrendingUp size={14} className="text-[#384D48]" />
-          <h3 className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest">Score Trend</h3>
-        </div>
-        <div className="flex flex-wrap gap-3 mb-3">
-          {markDS.map(ds => (
-            <div key={ds.id} className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ds.color }} />
-              <span className="text-[8px] font-bold text-[#6E7271]">{ds.name}</span>
+      {/* ══════════════════════════════════
+          TODAY'S PROGRESS
+      ══════════════════════════════════ */}
+      <div className="px-4 mb-4">
+        <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest mb-2">Today's Progress</p>
+
+        <div className="grid grid-cols-3 gap-2">
+
+          {/* Study time vs goal */}
+          <div className="bg-white rounded-[20px] p-3 flex flex-col items-center gap-1">
+            <div className="relative">
+              <Donut pct={todayPct} size={52} stroke={8} color="#384D48"/>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[9px] font-black text-[#384D48]">{Math.floor(todayMins/60)}h</span>
+              </div>
             </div>
-          ))}
-        </div>
-        <div className="relative h-32 bg-[#F5F5F5] rounded-xl p-3">
-          {markDS.every(d=>!d.points.length) ? (
-            <div className="h-full flex flex-col items-center justify-center gap-1">
-              <TrendingUp size={18} className="text-[#D8D4D5]" />
-              <p className="text-[9px] font-bold text-[#6E7271] uppercase">No test scores yet</p>
+            <p className="text-[8px] font-black text-[#384D48] text-center leading-tight">
+              {todayPct}% of 8h<br/>goal
+            </p>
+            <p className="text-[7px] text-[#ACAD94] text-center">Goal adjustable</p>
+          </div>
+
+          {/* Focus vs Break donut */}
+          <div className="bg-white rounded-[20px] p-3 flex flex-col items-center gap-1">
+            <div className="relative">
+              <Donut pct={focusPct} size={52} stroke={8} color="#384D48"/>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-[9px] font-black text-[#384D48]">{focusPct}%</span>
+              </div>
             </div>
-          ) : (
-            <>
+            <p className="text-[8px] font-black text-[#384D48] text-center leading-tight">
+              Focus vs<br/>Break
+            </p>
+            <p className="text-[7px] text-[#ACAD94]">{focusPct}% Focus</p>
+          </div>
+
+          {/* Focus score */}
+          <div className="bg-white rounded-[20px] p-3 flex flex-col gap-1.5">
+            <div className="flex items-center gap-1">
+              <Target size={10} className="text-[#ACAD94]"/>
+              <span className="text-[7px] font-bold text-[#6E7271] uppercase tracking-wider">Focus Score</span>
+            </div>
+            <p className="text-2xl font-black text-[#384D48] leading-none">{focusScore}%</p>
+            <div className="flex gap-0.5 mt-0.5">
+              {Array.from({length:7},(_,i)=>(
+                <div key={i} className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: i < weekActiveDays ? "#384D48" : "#E2E2E2" }}/>
+              ))}
+            </div>
+            <p className="text-[7px] text-[#ACAD94]">{weekActiveDays}/7 active days</p>
+            <p className="text-[7px] text-[#6E7271]">
+              {fmtH(todayMins)} · {fmtH(breakMins)} break
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════
+          WEEKLY RHYTHM
+      ══════════════════════════════════ */}
+      <div className="px-4 mb-4">
+        <div className="bg-white rounded-[24px] p-4">
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest">Weekly Rhythm</p>
+            <p className="text-[8px] text-[#ACAD94] font-bold">
+              {weekStart.toLocaleDateString("en-IN",{day:"numeric",month:"short"})} – {now.toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
+            </p>
+          </div>
+
+          {/* 4 stat chips */}
+          <div className="grid grid-cols-4 gap-1.5 mb-4">
+            <div className="bg-[#384D48] rounded-xl p-2">
+              <div className="flex items-center gap-0.5 mb-0.5">
+                <BookOpen size={8} className="text-[#ACAD94]"/>
+                <span className="text-[6px] text-[#ACAD94] font-bold uppercase">Study</span>
+              </div>
+              <p className="text-sm font-black text-white">{fmtHShort(weekStudyMins)}</p>
+            </div>
+            <div className="bg-[#F5F5F5] rounded-xl p-2">
+              <div className="flex items-center gap-0.5 mb-0.5">
+                <Coffee size={8} className="text-[#ACAD94]"/>
+                <span className="text-[6px] text-[#6E7271] font-bold uppercase">Break</span>
+              </div>
+              <p className="text-sm font-black text-[#384D48]">{fmtHShort(weekBreakMins)}</p>
+            </div>
+            <div className="bg-[#F5F5F5] rounded-xl p-2">
+              <div className="flex items-center gap-0.5 mb-0.5">
+                <Flame size={8} className="text-[#ACAD94]"/>
+                <span className="text-[6px] text-[#6E7271] font-bold uppercase">Days</span>
+              </div>
+              <p className="text-sm font-black text-[#384D48]">{weekActiveDays}/7</p>
+            </div>
+            <div className="bg-[#F5F5F5] rounded-xl p-2">
+              <div className="flex items-center gap-0.5 mb-0.5">
+                <TrendingUp size={8} className="text-[#ACAD94]"/>
+                <span className="text-[6px] text-[#6E7271] font-bold uppercase">Best</span>
+              </div>
+              <p className="text-sm font-black text-[#384D48]">{bestDayLabel}</p>
+            </div>
+          </div>
+
+          {/* 7-day bars */}
+          <WeekBars byDay={byDay}/>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════
+          THIS MONTH
+      ══════════════════════════════════ */}
+      <div className="px-4 mb-4">
+        <div className="bg-white rounded-[24px] p-4">
+          <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest mb-3">This Month</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-[#F5F5F5] rounded-xl p-3">
+              <Clock size={12} className="text-[#ACAD94] mb-1"/>
+              <p className="text-[7px] text-[#6E7271] font-bold uppercase">Total</p>
+              <p className="text-base font-black text-[#384D48]">{fmtHShort(monthMins)}</p>
+            </div>
+            <div className="bg-[#F5F5F5] rounded-xl p-3">
+              <Target size={12} className="text-[#ACAD94] mb-1"/>
+              <p className="text-[7px] text-[#6E7271] font-bold uppercase">Sessions</p>
+              <p className="text-base font-black text-[#384D48]">{totalSessions}</p>
+            </div>
+            <div className="bg-[#F5F5F5] rounded-xl p-3">
+              <TrendingUp size={12} className="text-[#ACAD94] mb-1"/>
+              <p className="text-[7px] text-[#6E7271] font-bold uppercase">Avg/Day</p>
+              <p className="text-base font-black text-[#384D48]">{fmtHShort(avgDaily)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════
+          MONTHLY CALENDAR
+      ══════════════════════════════════ */}
+      <div className="px-4 mb-4">
+        <div className="bg-white rounded-[24px] p-4">
+          <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest mb-3">Monthly Overview</p>
+          <MonthCalendar byDay={byDay} selectedKey={selectedDay} onSelect={setSelectedDay}/>
+
+          {/* Selected day detail */}
+          <div className="mt-4 pt-3 border-t border-[#F2F2F2]">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-[9px] font-bold text-[#6E7271] uppercase">{selLabel}</p>
+              {selMins > 0 && (
+                <span className="text-[7px] bg-[#384D48] text-white px-2 py-0.5 rounded-full font-bold">Active</span>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <p className="text-[7px] text-[#ACAD94] uppercase font-bold">Study</p>
+                <p className="text-sm font-black text-[#384D48]">{fmtH(selMins)}</p>
+              </div>
+              <div>
+                <p className="text-[7px] text-[#ACAD94] uppercase font-bold">Break</p>
+                <p className="text-sm font-black text-[#384D48]">{fmtH(selBreak)}</p>
+              </div>
+              <div>
+                <p className="text-[7px] text-[#ACAD94] uppercase font-bold">Focus</p>
+                <p className="text-sm font-black text-[#384D48]">{selFocus}%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════
+          SCORE TREND
+      ══════════════════════════════════ */}
+      <div className="px-4 mb-4">
+        <div className="bg-white rounded-[24px] p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp size={13} className="text-[#384D48]"/>
+            <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest">Score Trend</p>
+          </div>
+          <div className="flex gap-3 mb-2">
+            {markDS.map(ds=>(
+              <div key={ds.id} className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full" style={{backgroundColor:ds.color}}/>
+                <span className="text-[8px] font-bold text-[#6E7271]">{ds.name}</span>
+              </div>
+            ))}
+          </div>
+          <div className="h-24 bg-[#F5F5F5] rounded-xl p-3 relative">
+            {markDS.every(d=>!d.points.length) ? (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-[9px] text-[#ACAD94] font-bold uppercase">No scores yet</p>
+              </div>
+            ) : (
               <svg viewBox={`0 0 ${GW} ${GH}`} className="w-full h-full overflow-visible" preserveAspectRatio="none">
-                {markDS.map(ds => (
+                {markDS.map(ds=>(
                   <g key={ds.id}>
-                    {ds.points.length>1 && (
-                      <motion.polyline
-                        initial={{pathLength:0}} animate={{pathLength:1}}
+                    {ds.points.length>1&&(
+                      <motion.polyline initial={{pathLength:0}} animate={{pathLength:1}}
                         fill="none" stroke={ds.color} strokeWidth="2.5"
-                        strokeLinecap="round" strokeLinejoin="round"
-                        points={ds.path}
-                      />
+                        strokeLinecap="round" strokeLinejoin="round" points={ds.path}/>
                     )}
-                    {ds.points.map((p,i) => (
-                      <circle key={i} cx={p.x} cy={p.y} r="4"
-                        fill={ds.color} stroke="white" strokeWidth="1.5"
-                        onClick={()=>{ vibrate(15); setMT({x:p.x,y:p.y,label:p.label,val:p.val}); }}
-                      />
+                    {ds.points.map((p,i)=>(
+                      <circle key={i} cx={p.x} cy={p.y} r="3.5"
+                        fill={ds.color} stroke="white" strokeWidth="1.5"/>
                     ))}
                   </g>
                 ))}
               </svg>
-              <AnimatePresence>
-                {markTooltip && (
-                  <motion.div
-                    initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0}}
-                    className="absolute z-50 -translate-x-1/2 -translate-y-full pointer-events-none"
-                    style={{left:`${(markTooltip.x/GW)*100}%`,top:`${(markTooltip.y/GH)*100}%`}}
-                    onClick={()=>setMT(null)}
-                  >
-                    <div className="bg-[#384D48] text-white px-3 py-1.5 rounded-lg shadow-xl text-center">
-                      <p className="text-[7px] font-bold opacity-70 leading-none mb-1">{markTooltip.label}</p>
-                      <p className="text-xs font-black leading-none">{markTooltip.val}%</p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          )}
+            )}
+          </div>
         </div>
-      </section>
+      </div>
 
-      {/* Deadlines */}
-      <section className="space-y-3">
-        <h3 className="text-[10px] font-black text-[#6E7271] uppercase tracking-widest px-1">Global Deadlines</h3>
+      {/* ══════════════════════════════════
+          DEADLINES
+      ══════════════════════════════════ */}
+      <div className="px-4 mb-4">
+        <p className="text-[9px] font-black text-[#6E7271] uppercase tracking-widest mb-2">Global Deadlines</p>
         {allExams.filter(e=>countdown(e.date)!=="Passed").length>0 ? (
-          allExams.filter(e=>countdown(e.date)!=="Passed").map(ex=>(
-            <div key={ex.id}
-              className="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border-l-4"
-              style={{borderLeftColor: ex.type==="High"?"#384D48":"#ACAD94"}}
-            >
-              <div>
-                <p className="text-xs font-bold text-[#384D48]">{ex.title}</p>
-                <p className="text-[9px] font-bold text-[#6E7271] uppercase">{ex.subjectName} · {ex.type}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-black text-[#384D48]">{countdown(ex.date)}</span>
-                <button
-                  onClick={()=>{
+          <div className="space-y-2">
+            {allExams.filter(e=>countdown(e.date)!=="Passed").map(ex=>(
+              <div key={ex.id}
+                className="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm border-l-4"
+                style={{borderLeftColor:ex.type==="High"?"#384D48":"#ACAD94"}}>
+                <div>
+                  <p className="text-xs font-bold text-[#384D48]">{ex.title}</p>
+                  <p className="text-[9px] font-bold text-[#6E7271] uppercase">{ex.subjectName} · {ex.type}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-lg font-black text-[#384D48]">{countdown(ex.date)}</span>
+                  <button onClick={()=>{
                     vibrate(60);
                     updateSubject(ex.subjectId,{
                       exams:(subjects.find(s=>s.id===ex.subjectId)?.exams??[]).filter(e=>e.id!==ex.id)
                     });
-                  }}
-                  className="text-[#D8D4D5] active:text-[#384D48]"
-                >
-                  <Trash2 size={14}/>
-                </button>
+                  }} className="text-[#D8D4D5] active:text-[#384D48]">
+                    <Trash2 size={14}/>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
-          <div className="p-10 border-2 border-dashed border-[#D8D4D5] rounded-[32px] text-center">
-            <Calendar className="mx-auto text-[#D8D4D5] mb-2" size={22}/>
-            <p className="text-[10px] font-bold text-[#6E7271] uppercase">No active missions</p>
+          <div className="p-8 border-2 border-dashed border-[#D8D4D5] rounded-[28px] text-center">
+            <Calendar className="mx-auto text-[#D8D4D5] mb-2" size={20}/>
+            <p className="text-[9px] font-bold text-[#6E7271] uppercase">No active missions</p>
           </div>
         )}
-      </section>
+      </div>
 
     </div>
   );
