@@ -4,19 +4,17 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, CheckSquare, Calendar, LineChart, Brain } from "lucide-react";
+import { Target, CheckSquare, Calendar, LineChart, Brain, Leaf } from "lucide-react";
 
 const vibrate = (ms: number) => {
-  if (typeof window !== "undefined" && navigator.vibrate) {
-    navigator.vibrate(ms);
-  }
+  if (typeof window !== "undefined" && navigator.vibrate) navigator.vibrate(ms);
 };
 
 const navItems = [
   { name: "Core",     path: "/",         icon: Target      },
   { name: "Missions", path: "/tasks",    icon: CheckSquare },
   { name: "Flash",    path: "/revision", icon: Brain       },
-  { name: "Planner",  path: "/planner",  icon: Calendar    },
+  { name: "Garden",   path: "/zen",      icon: Leaf        },
   { name: "Intel",    path: "/analysis", icon: LineChart   },
 ];
 
@@ -25,14 +23,12 @@ export default function Navbar() {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange);
     return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", onChange);
+      document.removeEventListener("webkitfullscreenchange", onChange);
     };
   }, []);
 
@@ -41,9 +37,7 @@ export default function Navbar() {
     pathname === "/register" ||
     pathname === "/focus" ||
     isFullscreen
-  ) {
-    return null;
-  }
+  ) return null;
 
   const activeIndex = navItems.findIndex((item) => item.path === pathname);
 
@@ -70,14 +64,9 @@ export default function Navbar() {
         )}
 
         {/* Foreground Ridge */}
-        <div
-          className="absolute bottom-0 w-full h-[65%] bg-[#384D48]"
-          style={{
-            clipPath:
-              "polygon(0% 55%, 10% 20%, 20% 45%, 30% 15%, 40% 50%, 50% 10%, 60% 40%, 70% 25%, 80% 45%, 90% 20%, 100% 55%, 100% 100%, 0% 100%)",
-          }}
-        />
-        <div className="absolute bottom-0 w-full h-4 bg-[#384D48]" />
+        <div className="absolute bottom-0 w-full h-[65%] bg-[#384D48]"
+          style={{ clipPath: "polygon(0% 55%, 10% 20%, 20% 45%, 30% 15%, 40% 50%, 50% 10%, 60% 40%, 70% 25%, 80% 45%, 90% 20%, 100% 55%, 100% 100%, 0% 100%)" }}/>
+        <div className="absolute bottom-0 w-full h-4 bg-[#384D48]"/>
 
         {/* Icons */}
         <div className="absolute bottom-0 w-full h-full flex">
@@ -85,16 +74,10 @@ export default function Navbar() {
             const isActive = pathname === item.path;
             const Icon = item.icon;
             return (
-              <Link
-                key={item.path}
-                href={item.path}
+              <Link key={item.path} href={item.path}
                 onClick={() => vibrate(20)}
-                className="relative w-1/5 h-full flex flex-col justify-end items-center pb-4 pointer-events-auto"
-              >
-                <motion.div
-                  animate={{ y: isActive ? -36 : 0 }}
-                  className="flex flex-col items-center"
-                >
+                className="relative w-1/5 h-full flex flex-col justify-end items-center pb-4 pointer-events-auto">
+                <motion.div animate={{ y: isActive ? -36 : 0 }} className="flex flex-col items-center">
                   <div className={`p-2 rounded-full ${isActive ? "bg-[#384D48]/20" : ""}`}>
                     <Icon
                       size={isActive ? 22 : 18}
@@ -122,4 +105,5 @@ export default function Navbar() {
       </div>
     </div>
   );
-}
+                }
+        
