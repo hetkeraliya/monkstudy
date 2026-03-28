@@ -34,7 +34,14 @@ export interface ScheduleItem {
   id: string;
   task: string;
   time: string;
-  type: "JEE" | "Study" | "Break" | "Workout" | "Personal" | "Revision" | "MockTest";
+  type:
+    | "JEE"
+    | "Study"
+    | "Break"
+    | "Workout"
+    | "Personal"
+    | "Revision"
+    | "MockTest";
   completed: boolean;
 }
 
@@ -54,45 +61,64 @@ export interface Subject {
   exams: Exam[];
 }
 
+export interface UserProfile {
+  name: string;
+  targetCollege: string;
+  targetYear: string;       // e.g. "2026"
+  dailyGoalHours: number;   // daily study target in hours
+  avatar: string;           // emoji avatar
+  bio: string;
+}
+
 /* ================= STATE ================= */
 
 interface MonkState {
   xp: number;
   level: number;
   streak: number;
-  lastResetDate: string; // "YYYY-MM-DD" — tracks daily reset
+  lastResetDate: string;
+
+  profile: UserProfile;
 
   sessions: Session[];
   subjects: Subject[];
   schedule: ScheduleItem[];
   tasks: TaskItem[];
 
+  /* XP */
   addXp: (amount: number) => void;
 
+  /* PROFILE */
+  updateProfile: (data: Partial<UserProfile>) => void;
+
+  /* SESSIONS */
   addSession: (minutes: number, date?: string) => void;
 
-  /* daily reset check — call on app mount */
+  /* DAILY RESET */
   checkDailyReset: () => void;
 
+  /* SUBJECT */
   addChapter: (subjectId: string, title: string) => void;
-  removeChapter: (subjectId: string, chapterId: string) => void; // click to remove
+  removeChapter: (subjectId: string, chapterId: string) => void;
   toggleChapter: (subjectId: string, chapterId: string) => void;
   logStudyTime: (subjectId: string, minutes: number) => void;
-  setStudyMinutes: (subjectId: string, minutes: number) => void; // direct edit
+  setStudyMinutes: (subjectId: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
+  /* MARK + EXAM */
   addMark: (subjectId: string, mark: Mark) => void;
   removeMark: (subjectId: string, markId: string) => void;
-
   addExam: (subjectId: string, exam: Exam) => void;
   removeExam: (subjectId: string, examId: string) => void;
 
+  /* PLANNER */
   setSchedule: (items: ScheduleItem[]) => void;
   addScheduleItem: (item: ScheduleItem) => void;
   updateItem: (id: string, data: Partial<ScheduleItem>) => void;
   toggleScheduleItem: (id: string) => void;
   deleteScheduleItem: (id: string) => void;
 
+  /* TASKS */
   addTask: (text: string, priority: "High" | "Mid" | "Low") => void;
   deleteTask: (id: string) => void;
   toggleTask: (id: string) => void;
@@ -114,6 +140,15 @@ export const useStore = create<MonkState>()(
       streak: 1,
       lastResetDate: todayKey(),
 
+      profile: {
+        name: "",
+        targetCollege: "IIT Bombay",
+        targetYear: "2026",
+        dailyGoalHours: 8,
+        avatar: "🧘",
+        bio: "",
+      },
+
       sessions: [],
 
       subjects: [
@@ -132,18 +167,26 @@ export const useStore = create<MonkState>()(
         set({ xp: newXp, level: newLevel });
       },
 
+      /* ── PROFILE ── */
+      updateProfile: (data) =>
+        set((state) => ({
+          profile: { ...state.profile, ...data },
+        })),
+
       /* ── SESSION ── */
       addSession: (minutes, date) =>
         set((state) => ({
           sessions: [
             ...state.sessions,
-            { id: crypto.randomUUID(), minutes, date: date ?? new Date().toISOString() },
+            {
+              id: crypto.randomUUID(),
+              minutes,
+              date: date ?? new Date().toISOString(),
+            },
           ],
         })),
 
-      /* ── DAILY RESET ── 
-         Call this on every page mount. If today's date differs from 
-         lastResetDate, zero out all dailyStudyMinutes. */
+      /* ── DAILY RESET ── */
       checkDailyReset: () => {
         const today = todayKey();
         if (get().lastResetDate === today) return;
@@ -161,12 +204,17 @@ export const useStore = create<MonkState>()(
         set((state) => ({
           subjects: state.subjects.map((sub) =>
             sub.id === subjectId
-              ? { ...sub, chapters: [...sub.chapters, { id: crypto.randomUUID(), title, completed: false }] }
+              ? {
+                  ...sub,
+                  chapters: [
+                    ...sub.chapters,
+                    { id: crypto.randomUUID(), title, completed: false },
+                  ],
+                }
               : sub
           ),
         })),
 
-      // Click on chapter row → remove it + give XP
       removeChapter: (subjectId, chapterId) => {
         get().addXp(20);
         set((state) => ({
@@ -206,7 +254,6 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      // Set absolute value (for corrections)
       setStudyMinutes: (subjectId, minutes) =>
         set((state) => ({
           subjects: state.subjects.map((sub) =>
@@ -218,14 +265,18 @@ export const useStore = create<MonkState>()(
 
       updateSubject: (id, data) =>
         set((state) => ({
-          subjects: state.subjects.map((sub) => (sub.id === id ? { ...sub, ...data } : sub)),
+          subjects: state.subjects.map((sub) =>
+            sub.id === id ? { ...sub, ...data } : sub
+          ),
         })),
 
       /* ── MARKS ── */
       addMark: (subjectId, mark) =>
         set((state) => ({
           subjects: state.subjects.map((sub) =>
-            sub.id === subjectId ? { ...sub, marks: [...sub.marks, mark] } : sub
+            sub.id === subjectId
+              ? { ...sub, marks: [...sub.marks, mark] }
+              : sub
           ),
         })),
 
@@ -242,7 +293,9 @@ export const useStore = create<MonkState>()(
       addExam: (subjectId, exam) =>
         set((state) => ({
           subjects: state.subjects.map((sub) =>
-            sub.id === subjectId ? { ...sub, exams: [...sub.exams, exam] } : sub
+            sub.id === subjectId
+              ? { ...sub, exams: [...sub.exams, exam] }
+              : sub
           ),
         })),
 
@@ -257,26 +310,70 @@ export const useStore = create<MonkState>()(
 
       /* ── PLANNER ── */
       setSchedule: (items) => set({ schedule: items }),
-      addScheduleItem: (item) => set((state) => ({ schedule: [...state.schedule, item] })),
+
+      addScheduleItem: (item) =>
+        set((state) => ({ schedule: [...state.schedule, item] })),
+
       updateItem: (id, data) =>
-        set((state) => ({ schedule: state.schedule.map((item) => (item.id === id ? { ...item, ...data } : item)) })),
+        set((state) => ({
+          schedule: state.schedule.map((item) =>
+            item.id === id ? { ...item, ...data } : item
+          ),
+        })),
+
       toggleScheduleItem: (id) =>
-        set((state) => ({ schedule: state.schedule.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item)) })),
+        set((state) => ({
+          schedule: state.schedule.map((item) =>
+            item.id === id ? { ...item, completed: !item.completed } : item
+          ),
+        })),
+
       deleteScheduleItem: (id) =>
-        set((state) => ({ schedule: state.schedule.filter((item) => item.id !== id) })),
+        set((state) => ({
+          schedule: state.schedule.filter((item) => item.id !== id),
+        })),
 
       /* ── TASKS ── */
       addTask: (text, priority) =>
         set((state) => ({
-          tasks: [...state.tasks, { id: crypto.randomUUID(), text, priority, completed: false }],
+          tasks: [
+            ...state.tasks,
+            { id: crypto.randomUUID(), text, priority, completed: false },
+          ],
         })),
-      deleteTask: (id) => set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) })),
+
+      deleteTask: (id) =>
+        set((state) => ({
+          tasks: state.tasks.filter((task) => task.id !== id),
+        })),
+
       toggleTask: (id) =>
-        set((state) => ({ tasks: state.tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)) })),
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === id ? { ...task, completed: !task.completed } : task
+          ),
+        })),
 
       resetAll: () =>
-        set({ xp: 0, level: 1, streak: 1, sessions: [], subjects: [], schedule: [], tasks: [] }),
+        set({
+          xp: 0,
+          level: 1,
+          streak: 1,
+          sessions: [],
+          subjects: [],
+          schedule: [],
+          tasks: [],
+          profile: {
+            name: "",
+            targetCollege: "IIT Bombay",
+            targetYear: "2026",
+            dailyGoalHours: 8,
+            avatar: "🧘",
+            bio: "",
+          },
+        }),
     }),
     { name: "monk-os-storage" }
   )
 );
+            
