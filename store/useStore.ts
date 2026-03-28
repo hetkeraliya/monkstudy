@@ -34,14 +34,7 @@ export interface ScheduleItem {
   id: string;
   task: string;
   time: string;
-  type:
-    | "JEE"
-    | "Study"
-    | "Break"
-    | "Workout"
-    | "Personal"
-    | "Revision"
-    | "MockTest";
+  type: "JEE" | "Study" | "Break" | "Workout" | "Personal" | "Revision" | "MockTest";
   completed: boolean;
 }
 
@@ -64,10 +57,26 @@ export interface Subject {
 export interface UserProfile {
   name: string;
   targetCollege: string;
-  targetYear: string;       // e.g. "2026"
-  dailyGoalHours: number;   // daily study target in hours
-  avatar: string;           // emoji avatar
+  targetYear: string;
+  dailyGoalHours: number;
+  avatar: string;
   bio: string;
+}
+
+/* ── Flash-Monk spaced repetition card ── */
+export interface FlashCard {
+  id: string;
+  subject: "Physics" | "Chemistry" | "Maths" | "General";
+  topic: string;
+  question: string;   // What to recall (e.g. "Work-Energy Theorem")
+  answer: string;     // The actual formula/reaction (e.g. "W = ΔKE")
+  hint: string;       // Optional hint shown if stuck
+  interval: number;   // Days until next review
+  nextReview: string; // ISO date "YYYY-MM-DD"
+  lastReview: string; // ISO date
+  easeFactor: number; // SM-2 ease factor (starts 2.5)
+  reviewCount: number;
+  streak: number;     // Consecutive correct reviews
 }
 
 /* ================= STATE ================= */
@@ -79,25 +88,24 @@ interface MonkState {
   lastResetDate: string;
 
   profile: UserProfile;
+  flashCards: FlashCard[];
 
   sessions: Session[];
   subjects: Subject[];
   schedule: ScheduleItem[];
   tasks: TaskItem[];
 
-  /* XP */
   addXp: (amount: number) => void;
-
-  /* PROFILE */
   updateProfile: (data: Partial<UserProfile>) => void;
 
-  /* SESSIONS */
-  addSession: (minutes: number, date?: string) => void;
+  /* Flash-Monk */
+  addFlashCard: (card: Pick<FlashCard, "subject" | "topic" | "question" | "answer" | "hint">) => void;
+  reviewFlashCard: (id: string, quality: number) => void; // 0=fail,1=hard,2=ok,3=good,4=great,5=perfect
+  deleteFlashCard: (id: string) => void;
 
-  /* DAILY RESET */
+  addSession: (minutes: number, date?: string) => void;
   checkDailyReset: () => void;
 
-  /* SUBJECT */
   addChapter: (subjectId: string, title: string) => void;
   removeChapter: (subjectId: string, chapterId: string) => void;
   toggleChapter: (subjectId: string, chapterId: string) => void;
@@ -105,20 +113,17 @@ interface MonkState {
   setStudyMinutes: (subjectId: string, minutes: number) => void;
   updateSubject: (id: string, data: Partial<Subject>) => void;
 
-  /* MARK + EXAM */
   addMark: (subjectId: string, mark: Mark) => void;
   removeMark: (subjectId: string, markId: string) => void;
   addExam: (subjectId: string, exam: Exam) => void;
   removeExam: (subjectId: string, examId: string) => void;
 
-  /* PLANNER */
   setSchedule: (items: ScheduleItem[]) => void;
   addScheduleItem: (item: ScheduleItem) => void;
   updateItem: (id: string, data: Partial<ScheduleItem>) => void;
   toggleScheduleItem: (id: string) => void;
   deleteScheduleItem: (id: string) => void;
 
-  /* TASKS */
   addTask: (text: string, priority: "High" | "Mid" | "Low") => void;
   deleteTask: (id: string) => void;
   toggleTask: (id: string) => void;
@@ -129,6 +134,40 @@ interface MonkState {
 /* ================= HELPERS ================= */
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
+
+const addDays = (dateStr: string, days: number): string => {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
+/**
+ * SM-2 algorithm — calculates next interval and ease factor
+ * quality: 0-5 (0=complete fail, 5=perfect recall)
+ */
+function sm2(
+  quality: number,
+  interval: number,
+  easeFactor: number,
+  reviewCount: number
+): { interval: number; easeFactor: number } {
+  let newEF = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  newEF = Math.max(1.3, newEF);
+
+  let newInterval: number;
+  if (quality < 3) {
+    // Failed — reset to start
+    newInterval = 1;
+  } else if (reviewCount === 0) {
+    newInterval = 1;
+  } else if (reviewCount === 1) {
+    newInterval = 3;
+  } else {
+    newInterval = Math.round(interval * newEF);
+  }
+
+  return { interval: newInterval, easeFactor: newEF };
+}
 
 /* ================= STORE ================= */
 
@@ -148,6 +187,8 @@ export const useStore = create<MonkState>()(
         avatar: "🧘",
         bio: "",
       },
+
+      flashCards: [],
 
       sessions: [],
 
@@ -169,8 +210,51 @@ export const useStore = create<MonkState>()(
 
       /* ── PROFILE ── */
       updateProfile: (data) =>
+        set((state) => ({ profile: { ...state.profile, ...data } })),
+
+      /* ── FLASH CARDS ── */
+      addFlashCard: (card) =>
         set((state) => ({
-          profile: { ...state.profile, ...data },
+          flashCards: [
+            ...state.flashCards,
+            {
+              id:          crypto.randomUUID(),
+              subject:     card.subject,
+              topic:       card.topic,
+              question:    card.question,
+              answer:      card.answer,
+              hint:        card.hint,
+              interval:    1,
+              nextReview:  todayKey(),  // due immediately
+              lastReview:  "",
+              easeFactor:  2.5,
+              reviewCount: 0,
+              streak:      0,
+            },
+          ],
+        })),
+
+      reviewFlashCard: (id, quality) =>
+        set((state) => ({
+          flashCards: state.flashCards.map((c) => {
+            if (c.id !== id) return c;
+            const { interval, easeFactor } = sm2(quality, c.interval, c.easeFactor, c.reviewCount);
+            const passed = quality >= 3;
+            return {
+              ...c,
+              interval,
+              easeFactor,
+              reviewCount: c.reviewCount + 1,
+              streak:      passed ? c.streak + 1 : 0,
+              lastReview:  todayKey(),
+              nextReview:  addDays(todayKey(), interval),
+            };
+          }),
+        })),
+
+      deleteFlashCard: (id) =>
+        set((state) => ({
+          flashCards: state.flashCards.filter((c) => c.id !== id),
         })),
 
       /* ── SESSION ── */
@@ -178,11 +262,7 @@ export const useStore = create<MonkState>()(
         set((state) => ({
           sessions: [
             ...state.sessions,
-            {
-              id: crypto.randomUUID(),
-              minutes,
-              date: date ?? new Date().toISOString(),
-            },
+            { id: crypto.randomUUID(), minutes, date: date ?? new Date().toISOString() },
           ],
         })),
 
@@ -192,10 +272,7 @@ export const useStore = create<MonkState>()(
         if (get().lastResetDate === today) return;
         set((state) => ({
           lastResetDate: today,
-          subjects: state.subjects.map((sub) => ({
-            ...sub,
-            dailyStudyMinutes: 0,
-          })),
+          subjects: state.subjects.map((sub) => ({ ...sub, dailyStudyMinutes: 0 })),
         }));
       },
 
@@ -204,13 +281,7 @@ export const useStore = create<MonkState>()(
         set((state) => ({
           subjects: state.subjects.map((sub) =>
             sub.id === subjectId
-              ? {
-                  ...sub,
-                  chapters: [
-                    ...sub.chapters,
-                    { id: crypto.randomUUID(), title, completed: false },
-                  ],
-                }
+              ? { ...sub, chapters: [...sub.chapters, { id: crypto.randomUUID(), title, completed: false }] }
               : sub
           ),
         })),
@@ -244,7 +315,6 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* ── STUDY TIME ── */
       logStudyTime: (subjectId, minutes) =>
         set((state) => ({
           subjects: state.subjects.map((sub) =>
@@ -265,18 +335,13 @@ export const useStore = create<MonkState>()(
 
       updateSubject: (id, data) =>
         set((state) => ({
-          subjects: state.subjects.map((sub) =>
-            sub.id === id ? { ...sub, ...data } : sub
-          ),
+          subjects: state.subjects.map((sub) => (sub.id === id ? { ...sub, ...data } : sub)),
         })),
 
-      /* ── MARKS ── */
       addMark: (subjectId, mark) =>
         set((state) => ({
           subjects: state.subjects.map((sub) =>
-            sub.id === subjectId
-              ? { ...sub, marks: [...sub.marks, mark] }
-              : sub
+            sub.id === subjectId ? { ...sub, marks: [...sub.marks, mark] } : sub
           ),
         })),
 
@@ -289,13 +354,10 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* ── EXAMS ── */
       addExam: (subjectId, exam) =>
         set((state) => ({
           subjects: state.subjects.map((sub) =>
-            sub.id === subjectId
-              ? { ...sub, exams: [...sub.exams, exam] }
-              : sub
+            sub.id === subjectId ? { ...sub, exams: [...sub.exams, exam] } : sub
           ),
         })),
 
@@ -308,72 +370,43 @@ export const useStore = create<MonkState>()(
           ),
         })),
 
-      /* ── PLANNER ── */
       setSchedule: (items) => set({ schedule: items }),
-
-      addScheduleItem: (item) =>
-        set((state) => ({ schedule: [...state.schedule, item] })),
-
+      addScheduleItem: (item) => set((state) => ({ schedule: [...state.schedule, item] })),
       updateItem: (id, data) =>
         set((state) => ({
-          schedule: state.schedule.map((item) =>
-            item.id === id ? { ...item, ...data } : item
-          ),
+          schedule: state.schedule.map((item) => (item.id === id ? { ...item, ...data } : item)),
         })),
-
       toggleScheduleItem: (id) =>
         set((state) => ({
           schedule: state.schedule.map((item) =>
             item.id === id ? { ...item, completed: !item.completed } : item
           ),
         })),
-
       deleteScheduleItem: (id) =>
-        set((state) => ({
-          schedule: state.schedule.filter((item) => item.id !== id),
-        })),
+        set((state) => ({ schedule: state.schedule.filter((item) => item.id !== id) })),
 
-      /* ── TASKS ── */
       addTask: (text, priority) =>
         set((state) => ({
-          tasks: [
-            ...state.tasks,
-            { id: crypto.randomUUID(), text, priority, completed: false },
-          ],
+          tasks: [...state.tasks, { id: crypto.randomUUID(), text, priority, completed: false }],
         })),
-
       deleteTask: (id) =>
-        set((state) => ({
-          tasks: state.tasks.filter((task) => task.id !== id),
-        })),
-
+        set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) })),
       toggleTask: (id) =>
         set((state) => ({
-          tasks: state.tasks.map((task) =>
-            task.id === id ? { ...task, completed: !task.completed } : task
-          ),
+          tasks: state.tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)),
         })),
 
       resetAll: () =>
         set({
-          xp: 0,
-          level: 1,
-          streak: 1,
-          sessions: [],
-          subjects: [],
-          schedule: [],
-          tasks: [],
+          xp: 0, level: 1, streak: 1,
+          sessions: [], subjects: [], schedule: [], tasks: [], flashCards: [],
           profile: {
-            name: "",
-            targetCollege: "IIT Bombay",
-            targetYear: "2026",
-            dailyGoalHours: 8,
-            avatar: "🧘",
-            bio: "",
+            name: "", targetCollege: "IIT Bombay", targetYear: "2026",
+            dailyGoalHours: 8, avatar: "🧘", bio: "",
           },
         }),
     }),
     { name: "monk-os-storage" }
   )
 );
-            
+  
