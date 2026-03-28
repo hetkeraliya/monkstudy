@@ -426,4 +426,91 @@ export default function WelcomePage() {
                   {/* Floating leaves decoration */}
                   <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     {[
-                      { left:"8%",  top:"12%", siz
+                      { left:"8%",  top:"12%", size:40, delay:0    },
+                      { left:"75%", top:"8%",  size:28, delay:0.5  },
+                      { left:"20%", top:"70%", size:34, delay:1    },
+                      { left:"80%", top:"65%", size:22, delay:1.5  },
+                      { left:"50%", top:"20%", size:18, delay:0.8  },
+                    ].map((l, i) => (
+                      <motion.div
+                        key={i}
+                        animate={{ y: [-8, 8, -8], rotate: [-10, 10, -10] }}
+                        transition={{ duration: 4+i, repeat: Infinity, ease:"easeInOut", delay: l.delay }}
+                        style={{
+                          position:"absolute", left:l.left, top:l.top,
+                          width:l.size, height:l.size,
+                          background:"rgba(172,173,148,0.2)",
+                          borderRadius:"60% 40% 60% 40%",
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 flex flex-col items-center justify-center px-8 relative z-10">
+                    {/* Big quote mark */}
+                    <p className="text-[80px] leading-none text-[#ACAD94] opacity-20 font-serif -mb-6 self-start">"</p>
+
+                    <p className="text-white text-lg font-bold text-center leading-relaxed mb-4">
+                      {quote.text}
+                    </p>
+
+                    <p className="text-[#ACAD94] text-[10px] font-black uppercase tracking-widest mb-8">
+                      — {quote.author}
+                    </p>
+
+                    {/* Stats strip */}
+                    <div className="flex gap-6 mb-8">
+                      <div className="text-center">
+                        <p className="text-[8px] font-bold text-[#ACAD94] uppercase tracking-wider">Today</p>
+                        <p className="text-xs font-black text-white">{today.toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</p>
+                      </div>
+                      <div className="w-px bg-white opacity-20"/>
+                      <div className="text-center">
+                        <p className="text-[8px] font-bold text-[#ACAD94] uppercase tracking-wider">Day</p>
+                        <p className="text-xs font-black text-white">{dayOfYear} of 365</p>
+                      </div>
+                      <div className="w-px bg-white opacity-20"/>
+                      <div className="text-center">
+                        <p className="text-[8px] font-bold text-[#ACAD94] uppercase tracking-wider">Left</p>
+                        <p className="text-xs font-black text-white">{365 - dayOfYear} days</p>
+                      </div>
+                    </div>
+
+                    {/* LET'S BEGIN button */}
+                    <motion.button
+                      onClick={(e) => { e.stopPropagation(); handleBegin(); }}
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.03 }}
+                      className="w-full bg-white text-[#384D48] py-4 rounded-[20px] font-black text-sm tracking-wider uppercase shadow-lg"
+                    >
+                      Let's Begin 🌱
+                    </motion.button>
+                  </div>
+
+                  {/* Tap hint */}
+                  <p className="text-[#ACAD94] text-[8px] text-center pb-4 opacity-50">
+                    ← Tap card to flip back
+                  </p>
+                </div>
+              </div>
+
+            </motion.div>
+          </div>
+
+          {/* Bottom skip link */}
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 2 }}
+            onClick={handleBegin}
+            className="mt-6 text-[10px] text-[#ACAD94] font-bold uppercase tracking-widest"
+          >
+            Skip →
+          </motion.button>
+
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
