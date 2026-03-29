@@ -11,16 +11,16 @@ const vibrate = (ms: number) => {
 };
 
 const navItems = [
-  { name: "Core",     path: "/",         icon: Target      },
-  { name: "Missions", path: "/tasks",    icon: CheckSquare },
-  { name: "Flash",    path: "/revision", icon: Brain       },
-  { name: "Palace",   path: "/palace",   icon: Map         },
-  { name: "Garden",   path: "/zen",      icon: Leaf        },
-  { name: "Intel",    path: "/analysis", icon: LineChart   },
+  { path: "/",         icon: Target      },
+  { path: "/tasks",    icon: CheckSquare },
+  { path: "/revision", icon: Brain       },
+  { path: "/palace",   icon: Map         },
+  { path: "/zen",      icon: Leaf        },
+  { path: "/analysis", icon: LineChart   },
 ];
 
 export default function Navbar() {
-  const pathname    = usePathname();
+  const pathname = usePathname();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -41,43 +41,31 @@ export default function Navbar() {
   ) return null;
 
   return (
-    /* Fixed bottom bar — white, thin top border */
-    <div className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-[#E8E8E8]">
-      {/* Scrollable pill row — same as Telegram filter tabs */}
+    /* Floating pill container — lifted off the bottom like the screenshot */
+    <div className="fixed bottom-4 left-0 right-0 z-[999] flex justify-center px-5">
       <div
-        className="flex items-center gap-2 px-3 py-2.5 overflow-x-auto"
-        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+        className="flex items-center gap-1.5 px-3 py-2.5 rounded-full shadow-lg"
+        style={{
+          backgroundColor: "#FFFFFF",
+          boxShadow: "0 4px 24px rgba(56,77,72,0.18), 0 1px 4px rgba(0,0,0,0.08)",
+        }}
       >
-        {navItems.map((item) => {
-          const isActive = pathname === item.path;
-          const Icon = item.icon;
-
+        {navItems.map(({ path, icon: Icon }) => {
+          const isActive = pathname === path;
           return (
-            <Link
-              key={item.path}
-              href={item.path}
-              onClick={() => vibrate(15)}
-              className="flex-shrink-0"
-            >
+            <Link key={path} href={path} onClick={() => vibrate(15)}>
               <motion.div
                 animate={{
-                  backgroundColor: isActive ? "#384D48" : "#F0F0F0",
+                  backgroundColor: isActive ? "#384D48" : "transparent",
                 }}
                 transition={{ duration: 0.18 }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-full"
-                style={{ minWidth: 0 }}
+                className="w-11 h-11 rounded-full flex items-center justify-center"
               >
                 <Icon
-                  size={15}
-                  strokeWidth={isActive ? 2.3 : 1.8}
-                  color={isActive ? "#ffffff" : "#6E7271"}
+                  size={20}
+                  strokeWidth={isActive ? 2.2 : 1.8}
+                  color={isActive ? "#ffffff" : "#9AA09E"}
                 />
-                <span
-                  className="text-[11px] font-bold whitespace-nowrap leading-none"
-                  style={{ color: isActive ? "#ffffff" : "#6E7271" }}
-                >
-                  {item.name}
-                </span>
               </motion.div>
             </Link>
           );
