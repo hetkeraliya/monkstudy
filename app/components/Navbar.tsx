@@ -20,7 +20,7 @@ const navItems = [
 ];
 
 export default function Navbar() {
-  const pathname = usePathname();
+  const pathname    = usePathname();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -41,12 +41,13 @@ export default function Navbar() {
   ) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[999]">
-      {/* Thin top border */}
-      <div className="h-px bg-[#D8D4D5]" />
-
-      {/* Nav bar */}
-      <div className="bg-white flex items-stretch h-16 px-1 pb-safe">
+    /* Fixed bottom bar — white, thin top border */
+    <div className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t border-[#E8E8E8]">
+      {/* Scrollable pill row — same as Telegram filter tabs */}
+      <div
+        className="flex items-center gap-2 px-3 py-2.5 overflow-x-auto"
+        style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+      >
         {navItems.map((item) => {
           const isActive = pathname === item.path;
           const Icon = item.icon;
@@ -56,39 +57,28 @@ export default function Navbar() {
               key={item.path}
               href={item.path}
               onClick={() => vibrate(15)}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 relative"
+              className="flex-shrink-0"
             >
-              {/* Active indicator dot */}
-              {isActive && (
-                <motion.div
-                  layoutId="nav-indicator"
-                  className="absolute top-1 w-1 h-1 rounded-full bg-[#384D48]"
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-
-              {/* Icon */}
               <motion.div
                 animate={{
-                  scale: isActive ? 1.1 : 1,
-                  y: isActive ? -1 : 0,
+                  backgroundColor: isActive ? "#384D48" : "#F0F0F0",
                 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                transition={{ duration: 0.18 }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-full"
+                style={{ minWidth: 0 }}
               >
                 <Icon
-                  size={22}
-                  strokeWidth={isActive ? 2.2 : 1.8}
-                  className={isActive ? "text-[#384D48]" : "text-[#9AA09E]"}
+                  size={15}
+                  strokeWidth={isActive ? 2.3 : 1.8}
+                  color={isActive ? "#ffffff" : "#6E7271"}
                 />
+                <span
+                  className="text-[11px] font-bold whitespace-nowrap leading-none"
+                  style={{ color: isActive ? "#ffffff" : "#6E7271" }}
+                >
+                  {item.name}
+                </span>
               </motion.div>
-
-              {/* Label */}
-              <span
-                className="text-[9px] font-bold leading-none"
-                style={{ color: isActive ? "#384D48" : "#9AA09E" }}
-              >
-                {item.name}
-              </span>
             </Link>
           );
         })}
