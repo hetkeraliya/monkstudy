@@ -69,26 +69,6 @@ export default function Dashboard() {
 
   useEffect(() => { if (checkDailyReset) checkDailyReset(); }, []);
 
-  /* pomodoro */
-  const [seconds, setSeconds] = useState(1500);
-  const [running, setRunning] = useState(false);
-
-  useEffect(() => {
-    if (!running) return;
-    const iv = setInterval(() => {
-      setSeconds(p => {
-        if (p <= 1) { setRunning(false); addXp(30); return 1500; }
-        return p - 1;
-      });
-    }, 1000);
-    return () => clearInterval(iv);
-  }, [running, addXp]);
-
-  const fmt = () => {
-    const m = Math.floor(seconds/60), s = seconds%60;
-    return `${m}:${s<10?"0":""}${s}`;
-  };
-
   const [plannerOpen, setPlannerOpen] = useState(false);
 
   return (
@@ -108,10 +88,13 @@ export default function Dashboard() {
       <div className="bg-[#384D48] text-white rounded-[28px] p-7 shadow-[0_8px_20px_rgba(0,0,0,0.08)] mb-6">
         <div className="text-center mb-6">
           <p className="text-sm font-bold text-[#ACAD94] uppercase tracking-widest">Deep Focus</p>
-          <h2 className="text-5xl font-black mt-2 tracking-wide">{fmt()}</h2>
+          <h2 className="text-5xl font-black mt-2 tracking-wide">25:00</h2>
+          <p className="text-[10px] font-bold text-[#ACAD94] uppercase tracking-wider mt-2">
+            Locks your phone until the session ends
+          </p>
         </div>
         <button onClick={() => router.push("/focus")}
-          className="w-full bg-white text-[#384D48] py-4 rounded-[20px] font-black flex items-center justify-center gap-2">
+          className="w-full bg-white text-[#384D48] py-4 rounded-[20px] font-black flex items-center justify-center gap-2 active:scale-[0.98] transition">
           <Play size={18}/> Start Focus
         </button>
       </div>
