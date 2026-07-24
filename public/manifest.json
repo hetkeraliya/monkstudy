@@ -1,52 +1,27 @@
 {
-  "background_color": "#316233",
-  "description": "JEE Advanced Execution System",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "monkstudy.vercel",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "monkstudy.vercel",
+  "short_name": "Monk Study",
+  "name": "Monk Study - Focus & Productivity",
+  "description": "Minimalist study timer and focus environment for deep work.",
+  "id": "/",
   "start_url": "/",
-  "theme_color": "#5f6e41",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
   "icons": [
     {
-      "src": "https://monkstudy.vercel.app/favicon.ico",
-      "type": "image/x-icon",
-      "sizes": "16x16",
-      "isSquare": true,
-      "isPng": false,
-      "isWebp": false,
-      "isJpg": false,
-      "width": 16,
-      "is512x512": false,
-      "is256x256": false,
-      "is192x192": false
-    },
-    {
-      "src": "https://monkstudy.vercel.app/icon.png?5f2e9b518db579cf",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "2048x2048",
-      "isSquare": true,
-      "isPng": true,
-      "isWebp": false,
-      "isJpg": false,
-      "width": 2048,
-      "is512x512": false,
-      "is256x256": false,
-      "is192x192": false
+      "purpose": "any maskable"
     },
     {
-      "src": "https://monkstudy.vercel.app/favicon.ico",
-      "type": "image/x-icon",
-      "isSquare": false,
-      "isPng": false,
-      "isWebp": false,
-      "isJpg": false,
-      "width": 0,
-      "is512x512": false,
-      "is256x256": false,
-      "is192x192": false
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["productivity", "education", "utilities"]
 }
